@@ -1,0 +1,189 @@
+tags:
+  - name: Institutions
+    description: Gestion des institutions/organisations
+
+paths:
+  /api/institution:
+    get:
+      tags:
+        - Institutions
+      summary: Obtenir toutes les institutions (Super Admin)
+      description: Liste toutes les institutions du système
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste des institutions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Institution'
+        '403':
+          description: Non autorisé
+
+    post:
+      tags:
+        - Institutions
+      summary: Créer une institution (Super Admin)
+      description: Crée une nouvelle institution
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstitutionInput'
+      responses:
+        '201':
+          description: Institution créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Institution'
+        '400':
+          description: Données invalides
+        '403':
+          description: Non autorisé
+
+  /api/institution/seeds:
+    post:
+      tags:
+        - Institutions
+      summary: Créer des institutions depuis les seeds (Super Admin)
+      description: Importe les institutions depuis le fichier de seeds
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Institutions créées
+        '403':
+          description: Non autorisé
+
+  /api/institution/update/{id}:
+    put:
+      tags:
+        - Institutions
+      summary: Mettre à jour une institution (Super Admin)
+      description: Met à jour une institution existante
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInstitutionInput'
+      responses:
+        '200':
+          description: Institution mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Institution'
+        '404':
+          description: Institution non trouvée
+        '403':
+          description: Non autorisé
+
+  /api/institution/{id}:
+    delete:
+      tags:
+        - Institutions
+      summary: Supprimer une institution (Super Admin)
+      description: Supprime une institution du système
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Institution supprimée
+        '404':
+          description: Institution non trouvée
+        '403':
+          description: Non autorisé
+
+components:
+  schemas:
+    Institution:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        institutionType:
+          type: string
+          enum: [Ambassade, 'Haute Commission', Consulat, 'Organisation Internationale']
+        code:
+          type: string
+          maxLength: 4
+        libelle:
+          type: string
+        service:
+          type: string
+        status:
+          type: string
+          enum: [active, disabled]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateInstitutionInput:
+      type: object
+      required:
+        - institutionType
+        - code
+        - libelle
+        - service
+      properties:
+        institutionType:
+          type: string
+          enum: [Ambassade, 'Haute Commission', Consulat, 'Organisation Internationale']
+        code:
+          type: string
+          maxLength: 4
+        libelle:
+          type: string
+        service:
+          type: string
+
+    UpdateInstitutionInput:
+      type: object
+      properties:
+        institutionType:
+          type: string
+          enum: [Ambassade, 'Haute Commission', Consulat, 'Organisation Internationale']
+        code:
+          type: string
+          maxLength: 4
+        libelle:
+          type: string
+        service:
+          type: string
+        status:
+          type: string
+          enum: [active, disabled]
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

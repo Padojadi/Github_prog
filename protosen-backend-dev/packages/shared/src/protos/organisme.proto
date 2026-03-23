@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package organisme;
+
+import "google/protobuf/empty.proto";
+
+service OrganismeService {
+  rpc GetAllOrganismes (google.protobuf.Empty) returns (OrganismeList);
+  rpc GetOrganismeById (OrganismeIdRequest) returns (Organisme);
+  rpc GetOrganismesByIds (OrganismeIdsRequest) returns (OrganismeList);
+}
+
+message OrganismeList {
+  repeated Organisme organismes = 1;
+}
+
+message OrganismeIdRequest {
+  string id = 1;
+}
+
+message OrganismeIdsRequest {
+  repeated string ids = 1;
+}
+
+message Organisme {
+  string id = 1;
+  string institution_type = 2;
+  string code = 3;
+  string libelle = 4;
+  string service = 5;
+  string status = 6;
+}

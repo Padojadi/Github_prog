@@ -1,0 +1,24 @@
+{
+  "name": "protosen-backend",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "overrides": {
+    "@types/express-serve-static-core": "4.19.8"
+  },
+  "scripts": {
+    "dev:dpct": "npm run dev -w apps/dpct",
+    "dev:conferences": "npm run start:dev -w apps/conferences",
+    "build:dpct": "npm run build -w apps/dpct",
+    "build:conferences": "npm run build -w apps/conferences",
+    "build:shared": "npm run build -w packages/shared",
+    "build:all": "npm run build:shared && npm run build:dpct && npm run build:conferences",
+    "lint:dpct": "npm run lint -w apps/dpct",
+    "lint:conferences": "npm run lint -w apps/conferences",
+    "test:dpct": "npm run test -w apps/dpct",
+    "test:conferences": "npm run test -w apps/conferences"
+  }
+}

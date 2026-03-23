@@ -1,0 +1,410 @@
+"use client";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  Document,
+  Page,
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Font,
+  Svg,
+} from "@react-pdf/renderer";
+import { IPersonCardInfos } from "@/lib/types";
+import { convertDate } from "../utils/utils";
+import { diplomaticEntities, DiplomaticEntity } from "@/lib/data";
+import { QRCodeSVG } from "qrcode.react";
+import { fetchHolderCardById } from "@/lib/actions/diplomaticCards/holders";
+import { formatName } from "@/lib/utils";
+import { CardType } from "@/features/others/type-of-cards/types";
+import { SystemSettings } from "@/features/settings/system-settings/types";
+
+Font.register({
+  family: "Open Sans",
+  fonts: [
+    {
+      src: "/fonts/open-sans-regular.ttf",
+      fontWeight: 400,
+    },
+    {
+      src: "/fonts/open-sans-700.ttf",
+      fontWeight: 700,
+    },
+  ],
+});
+
+// Define styles using StyleSheet
+const styles = StyleSheet.create({
+  container: {
+    fontFamily: "Open Sans",
+    padding: 10,
+    color: "black",
+    margin: "auto",
+    height: "100%",
+    width: "100%",
+    position: "relative",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  idCardTitle: {
+    fontSize: 6,
+  },
+  ministryTitle: {
+    fontSize: 6,
+    textAlign: "right",
+  },
+  infoSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 6,
+  },
+  avatarContainer: {
+    flexDirection: "column",
+    alignItems: "flex-end",
+  },
+  avatar: {
+    width: 64,
+    height: 74,
+    backgroundColor: "#ccc",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cardNumber: {
+    fontSize: 6,
+    marginTop: 2,
+  },
+  textRight: {
+    textAlign: "right",
+  },
+  section: {
+    // marginTop: 8,
+  },
+  twoColumn: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 2,
+  },
+  labelText: {
+    fontSize: 6,
+    marginTop: 4,
+  },
+  shuffleIcon: {
+    width: 70,
+    height: 10,
+    backgroundColor: "#ccc",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  note: {
+    fontSize: 6,
+    textAlign: "center",
+  },
+  assim: {
+    textTransform: "uppercase",
+    color: "black",
+    fontWeight: 700,
+    marginTop: 4,
+    textAlign: "center",
+    fontSize: 6,
+  },
+  text: {
+    fontWeight: "bold",
+    fontSize: 6,
+    marginTop: 2,
+  },
+  watermark: {
+    position: "absolute",
+    top: "50%",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    transform: "rotate(-90deg) translateY(-50%)",
+    pointerEvents: "none",
+  },
+  watermarkText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#000000",
+  },
+});
+
+// Helper function to determine watermark color based on background color
+// const getContrastColor = (bgColor: string) => {
+//   // Convert hex to RGB
+//   const hexToRgb = (hex: string) => {
+//     const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+//     const hex2 = hex.replace(
+//       shorthandRegex,
+//       (m, r, g, b) => r + r + g + g + b + b
+//     );
+//     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex2);
+//     return result
+//       ? {
+//           r: parseInt(result[1], 16),
+//           g: parseInt(result[2], 16),
+//           b: parseInt(result[3], 16),
+//         }
+//       : null;
+//   };
+
+//   // Calculate luminance to determine if background is light or dark
+//   const rgb = hexToRgb(bgColor);
+//   if (!rgb) return "#000000";
+
+//   // For dark backgrounds, use a lighter watermark
+//   const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+//   return luminance > 0.5 ? "#000000" : "#ffffff";
+// };
+
+const IdCardPDF = ({
+  person,
+  settings,
+  bgColor = "#aefcac",
+  diplomaticEntity,
+  OIText,
+  qrCode,
+  photo,
+  plaque,
+  deliverDate,
+  expirationDate,
+  cardTitle,
+}: {
+  person: IPersonCardInfos;
+  settings: SystemSettings;
+  bgColor?: string;
+  diplomaticEntity: CardType | undefined;
+  OIText?: { label: string; value: string };
+  qrCode: string;
+  photo?: string;
+  plaque?: { label: string; value: string };
+  deliverDate: string;
+  expirationDate: string;
+  cardTitle: string;
+}) => {
+  const [newPerson, setNewPerson] = useState<any>();
+
+  // const watermarkColor = getContrastColor(bgColor);
+
+  const fetchHolderCard = useCallback(async () => {
+    try {
+      const response = await fetchHolderCardById(person.ownerDiplomaticCardId);
+      let holder = response.data;
+      setNewPerson({
+        ...person,
+        holderTitle: holder?.title,
+        holderFileNumber: holder?.id,
+        holderFirstName: holder?.firstName,
+        holderLastName: holder?.lastName,
+        holderCitizenship: holder?.citizenship,
+        holderJobFunction: holder?.jobFunction,
+      });
+      // console.log(holder);
+    } catch (error) {
+      // console.log(error);
+    }
+  }, [person]);
+
+  useEffect(() => {
+    fetchHolderCard();
+  }, [fetchHolderCard]);
+  return (
+    <Document>
+      <Page size={[243.7813, 153.072]}>
+        <View
+          style={{
+            ...styles.container,
+            backgroundColor: bgColor,
+          }}
+        >
+          <View style={styles.watermark}>
+            <Text style={{ ...styles.watermarkText }}>Duplicata</Text>
+          </View>
+          <View style={styles.header}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                width: "50%",
+              }}
+            >
+              <Image
+                src={"/images/flag-of-senegal.png"}
+                style={{ width: 30, height: "auto", marginRight: 5 }}
+              />
+              <Text
+                style={{
+                  ...styles.idCardTitle,
+                  width: "100px",
+                  textTransform: "uppercase",
+                }}
+              >
+                {person?.type_card}
+              </Text>
+            </View>
+            <View style={{ width: "42%" }}>
+              <Text style={styles.ministryTitle}>
+                {settings?.ministryName || "Ministère de l’Intégration africaine et des Affaires étrangères"}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.infoSection}>
+            <View style={{ flexDirection: "column" }}>
+              <Text style={styles.labelText}>Nom</Text>
+              <Text style={{ ...styles.text, fontWeight: "bold" }}>
+                {person?.lastName}
+              </Text>
+              <Text style={styles.labelText}>Prénom(s)</Text>
+              <Text style={styles.text}>{person?.firstName}</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "flex-start",
+                }}
+              >
+                <View>
+                  <Text style={styles.labelText}>Date de naissance</Text>
+                  <Text style={styles.text}>
+                    {convertDate(person?.dateOfBirth, "fr")}
+                  </Text>
+                </View>
+                <View style={{ marginHorizontal: 5 }}>
+                  <Text style={styles.labelText}>/</Text>
+                </View>
+                <View>
+                  <Text style={styles.labelText}>Sexe</Text>
+                  <Text style={styles.text}>{person.gender}</Text>
+                </View>
+              </View>
+              <Text style={styles.labelText}>Mission</Text>
+              <Text style={{ ...styles.text, width: "70%" }}>
+                {person.organism?.libelle || ""}
+              </Text>
+              <Text style={styles.labelText}>Qualité/Fonction</Text>
+              <Text style={{ ...styles.text, width: "70%" }}>
+                {person?.jobFunction
+                  ? person?.jobFunction
+                  : newPerson?.childDCFiles
+                  ? `Enfant de ${newPerson?.holderLastName ?? ""} ${
+                      formatName(newPerson?.holderFirstName) ?? ""
+                    }, ${newPerson?.holderJobFunction ?? ""}`
+                  : newPerson?.spouseDCFiles
+                  ? `Époux(se) de ${newPerson?.holderLastName ?? ""} ${
+                      formatName(newPerson?.holderFirstName) ?? ""
+                    }, ${newPerson?.holderJobFunction ?? ""}`
+                  : ""}
+              </Text>
+            </View>
+            <View style={styles.avatarContainer}>
+              {/* <View style={styles.avatar}></View> */}
+              {/* <Image
+              src={{
+                uri: person.photoLink,
+                method: "GET",
+                headers: { "Cache-Control": "no-cache" },
+                body: "",
+              }}
+            /> */}
+              {photo ? (
+                <Image
+                  src={photo}
+                  style={{
+                    width: 64,
+                    height: 74,
+                  }}
+                />
+              ) : (
+                <View style={styles.avatar}></View>
+              )}
+              <View
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "4px",
+                  marginTop: "8px",
+                }}
+              >
+                <Text style={{ ...styles.cardNumber, fontSize: 5 }}>N°</Text>
+                <Text style={{ ...styles.text, fontSize: 5 }}>
+                  {person.plaque ? person.plaque + "-" : ""}
+                  {person?.cardNumber}
+                </Text>
+                {/* <Text style={styles.text}></Text> */}
+              </View>
+            </View>
+          </View>
+          {person?.type_card && (
+            <Text style={styles.assim}>{person?.observation}</Text>
+          )}
+        </View>
+      </Page>
+      <Page size={[243.7813, 153.072]}>
+        <View style={{ ...styles.container, backgroundColor: bgColor }}>
+          <View style={styles.watermark}>
+            <Text style={{ ...styles.watermarkText }}>Duplicata</Text>
+          </View>
+          <View style={styles.header}>
+            <Image
+              src={qrCode}
+              style={{
+                width: 30,
+                height: 30,
+                marginRight: 5,
+                backgroundColor: "#00000000",
+              }}
+            />
+            <View style={{ ...styles.textRight, width: "40%" }}>
+              <Text style={{ fontSize: 6 }}>
+                {settings?.protocolDirectionName || "Direction du Protocole, des Conférences et de la Traduction"}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.twoColumn}>
+              <View style={{ flexDirection: "column" }}>
+                <View>
+                  <Text style={styles.labelText}>Date de délivrance</Text>
+                  <Text style={styles.text}>
+                    {convertDate(person?.issueDate, "fr")}
+                  </Text>
+                </View>
+                <View>
+                  <Text style={styles.labelText}>Date d'expiration</Text>
+                  <Text style={styles.text}>
+                    {convertDate(person?.validUntil, "fr")}
+                  </Text>
+                </View>
+                <View>
+                  <Text style={styles.labelText}>Nationalité</Text>
+                  <Text style={styles.text}>{person?.citizenship}</Text>
+                </View>
+              </View>
+              <View style={styles.textRight}>
+                <Image
+                  src={settings?.directorSignature || "/images/sign_prot2.png"}
+                  style={{ width: 150, height: 76, marginRight: 5 }}
+                />
+              </View>
+            </View>
+
+            <View>
+              <Text style={styles.note}>{person?.description}</Text>
+            </View>
+            {/* <View style={{ marginTop: 2 }}>
+          </View> */}
+          </View>
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+export default IdCardPDF;
