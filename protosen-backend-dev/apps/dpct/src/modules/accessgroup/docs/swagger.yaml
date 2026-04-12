@@ -1,0 +1,179 @@
+tags:
+  - name: Access Groups
+    description: Gestion des groupes d'accès et permissions
+
+paths:
+  /api/accessgroup:
+    get:
+      tags:
+        - Access Groups
+      summary: Obtenir tous les groupes d'accès
+      description: Liste tous les groupes d'accès avec leurs permissions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste des groupes d'accès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccessGroup'
+
+    post:
+      tags:
+        - Access Groups
+      summary: Créer un groupe d'accès (Super Admin)
+      description: Crée un nouveau groupe d'accès avec des permissions
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccessGroupInput'
+      responses:
+        '201':
+          description: Groupe d'accès créé
+        '403':
+          description: Non autorisé
+
+  /api/accessgroup/{id}:
+    get:
+      tags:
+        - Access Groups
+      summary: Obtenir un groupe d'accès par ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Groupe d'accès trouvé
+        '404':
+          description: Non trouvé
+
+    put:
+      tags:
+        - Access Groups
+      summary: Mettre à jour un groupe d'accès (Super Admin)
+      description: Met à jour un groupe d'accès (uniquement si editable = true)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccessGroupInput'
+      responses:
+        '200':
+          description: Groupe d'accès mis à jour
+        '403':
+          description: Non autorisé ou non modifiable
+
+    delete:
+      tags:
+        - Access Groups
+      summary: Supprimer un groupe d'accès (Super Admin)
+      description: Supprime un groupe d'accès (uniquement si editable = true)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Groupe d'accès supprimé
+        '403':
+          description: Non autorisé ou non supprimable
+
+components:
+  schemas:
+    AccessGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+              - ACCESS_CONFERENCE_MODULE
+              - REQUEST_CONFERENCE
+              - ACCEPT_CONFERENCE_REQUEST
+              - VALIDATE_CONFERENCE_REQUEST
+              - CONFIRM_CONFERENCE_REQUEST
+              - MANAGE_CONFERENCES
+              - ACCESS_CARD_MODULE
+        editable:
+          type: boolean
+          description: Indique si le groupe peut être modifié/supprimé
+
+    CreateAccessGroupInput:
+      type: object
+      required:
+        - name
+        - permissions
+      properties:
+        name:
+          type: string
+          minLength: 1
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+              - ACCESS_CONFERENCE_MODULE
+              - REQUEST_CONFERENCE
+              - ACCEPT_CONFERENCE_REQUEST
+              - VALIDATE_CONFERENCE_REQUEST
+              - CONFIRM_CONFERENCE_REQUEST
+              - MANAGE_CONFERENCES
+              - ACCESS_CARD_MODULE
+
+    UpdateAccessGroupInput:
+      type: object
+      properties:
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+              - ACCESS_CONFERENCE_MODULE
+              - REQUEST_CONFERENCE
+              - ACCEPT_CONFERENCE_REQUEST
+              - VALIDATE_CONFERENCE_REQUEST
+              - CONFIRM_CONFERENCE_REQUEST
+              - MANAGE_CONFERENCES
+              - ACCESS_CARD_MODULE
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

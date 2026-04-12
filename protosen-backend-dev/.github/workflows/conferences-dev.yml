@@ -1,0 +1,71 @@
+name: "[Conferences] Build & Deploy to Dev"
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'apps/conferences/**'
+      - 'packages/shared/**'
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: protosen
+
+jobs:
+  build:
+    name: Build to ECR
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: conferencesdev-api-latest
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f apps/conferences/Dockerfile .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ENV_CONFERENCES: ${{ secrets.ENV_CONFERENCES }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          envs: ENV_CONFERENCES,AWS_REGION,ECR_REGISTRY,ECR_REPOSITORY
+          script: |
+            cd /home/ec2-user/protosen/dev_env/stacks/conferences/
+            echo "$ENV_CONFERENCES" | sudo tee .env > /dev/null
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+            docker pull $ECR_REGISTRY/$ECR_REPOSITORY:conferencesdev-api-latest
+            docker service rm protosendev-conferenceapi-stack_conferences-api || true
+            docker system prune -f
+            docker stack deploy -c docker-compose.yml protosendev-conferenceapi-stack

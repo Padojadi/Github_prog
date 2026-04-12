@@ -1,0 +1,306 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Conference {
+  id                       String                    @id @default(uuid())
+  firstName                String
+  lastName                 String
+  institutionId            String
+  job                      String
+  email                    String
+  themeDoc                 String
+  budgetDoc                String
+  startDate                DateTime
+  endDate                  DateTime
+  matriculeNumber          String
+  phone                    String
+  title                    String
+  location                 String
+  description              String                    @default("")
+  creatorId                String
+  lastStatus               ConferenceStatus          @default(PENDING)
+  statusHistories          StatusHistory[]
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  conferenceAccommodations ConferenceAccommodation[]
+  tickets                  Ticket[]
+  participants             Participant[]
+
+  conferenceParticipantsType ConferenceParticipantType[]
+}
+
+enum ConferenceStatus {
+  PENDING // En attente
+  ACCEPTED // Accepté
+  VALIDATED // Validé
+  CONFIRMED // Confirmé
+  REJECTED // Rejeté temporairement
+  REJECTED_PERMANENTLY // Rejeté définitivement
+  PUBLISHED // Publié
+  CLOSED // Clôturé
+}
+
+model StatusHistory {
+  id              String           @id @default(uuid())
+  conference      Conference       @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId    String
+  status          ConferenceStatus
+  changedByID     String // ID de l'utilisateur ayant effectué le changement
+  rejectionReason String? // Raison du rejet si applicable
+  changedAt       DateTime         @default(now())
+}
+
+model Accommodation {
+  id                       String                    @id @default(uuid())
+  name                     String
+  phone                    String
+  location                 String
+  geolocation              String?
+  reservationLink          String?
+  email                    String
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  conferenceAccommodations ConferenceAccommodation[]
+}
+
+model ConferenceAccommodation {
+  id              String        @id @default(uuid())
+  conferenceId    String
+  accommodationId String
+  conference      Conference    @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  participants    Participant[]
+}
+
+model Ticket {
+  id            String        @id @default(uuid())
+  conferenceId  String
+  conference    Conference    @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  colorTheme    String?
+  price         Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  subscriptions Participant[]
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Participant {
+  id                          String                      @id @default(uuid())
+  firstName                   String
+  lastName                    String
+  gender                      Gender // Utilisation de l'énumération Gender
+  organisation                String
+  postalCode                  String
+  code                        String?                     @unique
+  city                        String
+  country                     String
+  visaNeeded                  Boolean
+  acceptTerms                 Boolean
+  email                       String
+  address                     String
+  phone                       String
+  functionId                  String? // relation vers FunctionModel
+  functionModel               FunctionModel?              @relation(fields: [functionId], references: [id])
+  customFunction              String? // si non listé, on garde ce champ
+  supportOptions              ParticipantSupportOption[]
+  conferenceParticipantTypeId String?
+  conferenceParticipantType   ConferenceParticipantType?  @relation(fields: [conferenceParticipantTypeId], references: [id])
+  loginCode                   String?
+  avatarUrl                   String                      @default("")
+  ticketId                    String
+  ticket                      Ticket                      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  conferenceId                String
+  conference                  Conference                  @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  subscriptionStatus          SubscriptionStatus          @default(PROCESSING)
+  paydunyatoken               String?                     @unique
+  createdAt                   DateTime                    @default(now())
+  updatedAt                   DateTime                    @updatedAt
+  conferenceAccommodationId   String?
+  conferenceAccommodation     ConferenceAccommodation?    @relation(fields: [conferenceAccommodationId], references: [id], onDelete: SetNull)
+  customAccommodation         String? // si l'utilisateur a choisi un hébergement non listé
+  identityType                String
+  identityNumber              String
+  identityIssueDate           DateTime
+  dateOfBirth                 DateTime
+  nationality                 String
+  subscriptionStatusHistory   SubscriptionStatusHistory[]
+}
+
+enum SubscriptionStatus {
+  PROCESSING // En cours de traitement
+  REJECTED // Rejeté
+
+  PENDING_PAYMENT // En attente de paiement
+
+  PAID // Paiement validé
+  CANCELLED // Inscription annulée
+  REFUNDED // Remboursé
+}
+
+model SubscriptionStatusHistory {
+  id              String             @id @default(uuid())
+  participant     Participant        @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  participantId   String
+  status          SubscriptionStatus
+  changedByID     String? // ID de l'utilisateur ayant effectué le changement
+  rejectionReason String? // Raison du rejet si applicable
+  changedAt       DateTime           @default(now())
+}
+
+model FunctionModel {
+  id           String        @id @default(uuid())
+  name         String        @unique
+  participants Participant[]
+}
+
+model SupportOption {
+  id           String                    @id @default(uuid())
+  label        String
+  participants ParticipantSupportOption[]
+}
+
+model ParticipantSupportOption {
+  id              String        @id @default(uuid())
+  participantId   String
+  supportOptionId String
+  participant     Participant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  supportOption   SupportOption @relation(fields: [supportOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, supportOptionId])
+}
+
+model ParticipantType {
+  id                        String                      @id @default(uuid())
+  label                     String
+  description               String?
+  conferenceParticipantType ConferenceParticipantType[]
+}
+
+model ConferenceParticipantType {
+  id                 String          @id @default(uuid())
+  conferenceId       String
+  participantTypeId  String
+  requiresValidation Boolean         @default(false)
+  conference         Conference      @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  participantType    ParticipantType @relation(fields: [participantTypeId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  participants Participant[]
+}
+
+enum LoungeStatus {
+  ACTIVE
+  MAINTENANCE
+  INACTIVE
+}
+
+enum LoungeBookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum LoungePaymentMethod {
+  ONLINE
+  ON_SITE
+}
+
+enum LoungePaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model Lounge {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  capacity      Int
+  amenities     Json           @default("[]")
+  hourlyRate    Float          @default(0)
+  imageUrl      String?
+  status        LoungeStatus   @default(ACTIVE)
+  location      String
+  loungeType    String?
+  maxBookings   Int?
+  availableDays Json           @default("[]")
+  timeSlots     Json           @default("[]")
+  createdBy     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  bookings      LoungeBooking[]
+}
+
+model LoungeBooking {
+  id               String              @id @default(uuid())
+  loungeId         String
+  lounge           Lounge              @relation(fields: [loungeId], references: [id], onDelete: Cascade)
+  userId           String
+  startTime        DateTime
+  endTime          DateTime
+  numGuests        Int
+  status           LoungeBookingStatus @default(PENDING)
+  totalAmount      Float               @default(0)
+  specialRequests  String?
+  adminNotes       String?
+  processedBy      String?
+  processedAt      DateTime?
+  paymentMethod    LoungePaymentMethod @default(ON_SITE)
+  paymentStatus    LoungePaymentStatus @default(PENDING)
+  qrCodeData       String?
+  guestFirstName   String?
+  guestLastName    String?
+  guestFunction    String?
+  guestPhone       String?
+  guestOrganization String?
+  guestNationality String?
+  airline          String?
+  flightNumber     String?
+  flightOrigin     String?
+  flightArrivalTime DateTime?
+  companions       Json                @default("[]")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  histories        LoungeBookingHistory[]
+
+  @@index([loungeId])
+  @@index([userId])
+  @@index([status])
+  @@index([startTime, endTime])
+}
+
+model LoungeBookingHistory {
+  id          String              @id @default(uuid())
+  bookingId   String
+  booking     LoungeBooking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  action      String
+  oldStatus   LoungeBookingStatus?
+  newStatus   LoungeBookingStatus?
+  notes       String?
+  processedBy String?
+  createdAt   DateTime            @default(now())
+
+  @@index([bookingId])
+  @@index([createdAt])
+}

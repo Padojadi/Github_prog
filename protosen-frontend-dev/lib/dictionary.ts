@@ -1,0 +1,25 @@
+const d = {
+  firstName: "Prénom",
+  lastName: "Nom",
+  email: "Email",
+  phone: "Téléphone",
+  structure: "Structure",
+  job: "Fontion",
+  themeDoc: "Thème et programme",
+  budgetDoc: "Projet de budget",
+  startDate: "Date de début",
+  endDate: "Date de fin",
+  matriculeNumber: "Matricule",
+  title: "Titre",
+  location: "Lieu",
+  reason: "Raison de la conférence",
+  errorValidationTitle: "Veuillez vérifier vos entrées svp!",
+  system: "System",
+  dark: "Dark",
+  light: "Light",
+  id: "Identifiant",
+  description: "Description",
+  accomodationIds: "Hébergements",
+} as const;
+
+export { d };

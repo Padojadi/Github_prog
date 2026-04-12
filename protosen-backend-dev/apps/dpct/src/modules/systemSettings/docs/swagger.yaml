@@ -1,0 +1,137 @@
+tags:
+  - name: System Settings
+    description: Gestion des paramètres système (signature directeur, nom ministère, direction protocole)
+
+paths:
+  /api/system-settings:
+    get:
+      tags:
+        - System Settings
+      summary: Obtenir les paramètres système
+      description: Récupère les paramètres système actuels (signature du directeur, nom du ministère, nom de la direction du protocole)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Paramètres système récupérés avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SystemSettings'
+                  message:
+                    type: string
+                    example: Paramètres système récupérés avec succès
+        '401':
+          description: Non authentifié
+        '500':
+          description: Erreur serveur
+
+    put:
+      tags:
+        - System Settings
+      summary: Mettre à jour les paramètres système (Super Admin)
+      description: |
+        Met à jour les paramètres système. Seul le Super Admin peut effectuer cette action.
+
+        **Note:** La signature du directeur doit être une image encodée en base64 (PNG, JPEG, GIF, WebP)
+        et ne doit pas dépasser 512KB.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSystemSettingsInput'
+      responses:
+        '200':
+          description: Paramètres système mis à jour avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SystemSettings'
+                  message:
+                    type: string
+                    example: Paramètres système mis à jour avec succès
+        '400':
+          description: Données invalides (signature trop grande, format invalide)
+        '401':
+          description: Non authentifié
+        '403':
+          description: Non autorisé (Super Admin requis)
+        '500':
+          description: Erreur serveur
+
+components:
+  schemas:
+    SystemSettings:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifiant unique des paramètres
+        directorSignature:
+          type: string
+          nullable: true
+          description: Signature du directeur encodée en base64 (format data URI ou base64 pur)
+          example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
+        ministryName:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Nom du Ministère
+          example: Ministère des Affaires Étrangères
+        protocolDirectionName:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Nom de la Direction du Protocole
+          example: Direction du Protocole
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création
+        updatedAt:
+          type: string
+          format: date-time
+          description: Date de dernière modification
+
+    UpdateSystemSettingsInput:
+      type: object
+      description: |
+        Tous les champs sont optionnels. Seuls les champs fournis seront mis à jour.
+      properties:
+        directorSignature:
+          type: string
+          nullable: true
+          description: |
+            Signature du directeur encodée en base64.
+            - Formats acceptés: PNG, JPEG, JPG, GIF, WebP
+            - Taille maximale: 512KB
+            - Format: data URI (data:image/png;base64,...) ou base64 pur
+          example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
+        ministryName:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Nom du Ministère
+          example: Ministère des Affaires Étrangères
+        protocolDirectionName:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Nom de la Direction du Protocole
+          example: Direction du Protocole
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

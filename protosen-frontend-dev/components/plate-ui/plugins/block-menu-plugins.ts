@@ -1,0 +1,14 @@
+"use client";
+
+import { BlockMenuPlugin } from "@udecode/plate-selection/react";
+
+import { BlockContextMenu } from "../block-context-menu";
+
+import { blockSelectionPlugins } from "./block-selection-plugin";
+
+export const blockMenuPlugins = [
+  ...blockSelectionPlugins,
+  BlockMenuPlugin.configure({
+    render: { aboveEditable: BlockContextMenu },
+  }),
+] as const;
