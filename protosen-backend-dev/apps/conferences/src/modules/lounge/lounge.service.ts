@@ -27,6 +27,10 @@ import { User } from '../user/generated/user';
 export class LoungeService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private asInputJsonValue(value: unknown): Prisma.InputJsonValue {
+    return value as Prisma.InputJsonValue;
+  }
+
   private hasPermission(user: User, permission: string): boolean {
     return (user?.accessGroup?.permissions || []).includes(permission);
   }
@@ -63,15 +67,15 @@ export class LoungeService {
           name: dto.name,
           description: dto.description,
           capacity: dto.capacity,
-          amenities: dto.amenities ?? [],
+          amenities: this.asInputJsonValue(dto.amenities ?? []),
           hourlyRate: dto.hourlyRate,
           imageUrl: dto.imageUrl,
           status: dto.status ?? LoungeStatus.ACTIVE,
           location: dto.location,
           loungeType: dto.loungeType,
           maxBookings: dto.maxBookings,
-          availableDays: dto.availableDays ?? [],
-          timeSlots: dto.timeSlots ?? [],
+          availableDays: this.asInputJsonValue(dto.availableDays ?? []),
+          timeSlots: this.asInputJsonValue(dto.timeSlots ?? []),
           createdBy: user.id,
         },
       });
@@ -176,9 +180,11 @@ export class LoungeService {
         where: { id },
         data: {
           ...dto,
-          amenities: dto.amenities ?? oldLounge.amenities,
-          availableDays: dto.availableDays ?? oldLounge.availableDays,
-          timeSlots: dto.timeSlots ?? oldLounge.timeSlots,
+          amenities: this.asInputJsonValue(dto.amenities ?? oldLounge.amenities),
+          availableDays: this.asInputJsonValue(
+            dto.availableDays ?? oldLounge.availableDays,
+          ),
+          timeSlots: this.asInputJsonValue(dto.timeSlots ?? oldLounge.timeSlots),
         },
       });
     } catch (error) {
@@ -303,7 +309,7 @@ export class LoungeService {
           flightArrivalTime: dto.flightArrivalTime
             ? new Date(dto.flightArrivalTime)
             : undefined,
-          companions: dto.companions ?? [],
+          companions: this.asInputJsonValue(dto.companions ?? []),
           histories: {
             create: {
               action: 'created',
