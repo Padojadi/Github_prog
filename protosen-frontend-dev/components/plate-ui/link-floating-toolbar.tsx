@@ -68,6 +68,7 @@ export function LinkFloatingToolbar({ state }: LinkFloatingToolbarProps) {
     ref: editRef,
     unlinkButtonProps,
   } = useFloatingLinkEdit(editState);
+  const { style: editStyle, ...editDivProps } = editProps;
   const inputProps = useFormInputProps({
     preventDefaultOnEnterKeydown: true,
   });
@@ -153,7 +154,8 @@ export function LinkFloatingToolbar({ state }: LinkFloatingToolbarProps) {
       <div
         ref={editRef}
         className={cn(popoverVariants(), "w-auto p-1")}
-        {...editProps}
+        style={editStyle as React.CSSProperties}
+        {...editDivProps}
       >
         {editContent}
       </div>

@@ -7,6 +7,7 @@ import type {
   LoungeBooking,
   LoungeBookingHistory,
   LoungeBookingListResponse,
+  LoungePaymentStatus,
   LoungeListResponse,
   LoungeBookingStatus,
 } from "../types";
@@ -21,15 +22,17 @@ const buildSearchParams = (params: Record<string, unknown>) => {
   return query;
 };
 
-const fetchWithAuth = async (url: string) => {
+const fetchWithAuth = async (url: string, init?: RequestInit) => {
   const session = await getSession();
   const token = session?.backendTokens?.accessToken;
 
   return fetch(url, {
     method: "GET",
+    ...init,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
+      ...(init?.headers || {}),
     },
   });
 };
@@ -45,6 +48,27 @@ const handleError = (response: Response, result: any, fallback: string) => {
     result?.code ? String(result?.code) : String(response.status),
     result?.code ? getApiErrorMessage(result?.code) : fallback,
   );
+};
+
+type CreateLoungeInput = {
+  name: string;
+  location: string;
+  description?: string;
+  capacity: number;
+  amenities?: string[];
+  hourlyRate: number;
+  imageUrl?: string;
+  status?: "ACTIVE" | "MAINTENANCE" | "INACTIVE";
+  loungeType?: string;
+  maxBookings?: number;
+  availableDays?: string[];
+  timeSlots?: Array<{ start: string; end: string }>;
+};
+
+type UpdateLoungeBookingStatusInput = {
+  status: LoungeBookingStatus;
+  adminNotes?: string;
+  paymentStatus?: LoungePaymentStatus;
 };
 
 export const getLoungesClient = async (
@@ -66,6 +90,28 @@ export const getLoungesClient = async (
       data: result as LoungeListResponse,
       status: "success",
       message: "Salons récupérés avec succès",
+    };
+  } catch (error) {
+    return createSafeError(error);
+  }
+};
+
+export const createLoungeClient = async (data: CreateLoungeInput) => {
+  const url = `${BACKEND_URL_CONFERENCES}/lounge`;
+
+  try {
+    const response = await fetchWithAuth(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      handleError(response, result, "Erreur lors de la création du salon");
+    }
+    return {
+      data: result as Lounge,
+      status: "success",
+      message: "Salon créé avec succès",
     };
   } catch (error) {
     return createSafeError(error);
@@ -155,6 +201,31 @@ export const getLoungeBookingHistoryClient = async (id: string) => {
       data: result as LoungeBookingHistory[],
       status: "success",
       message: "Historique récupéré avec succès",
+    };
+  } catch (error) {
+    return createSafeError(error);
+  }
+};
+
+export const updateLoungeBookingStatusClient = async (
+  id: string,
+  data: UpdateLoungeBookingStatusInput,
+) => {
+  const url = `${BACKEND_URL_CONFERENCES}/lounge/bookings/${id}/status`;
+
+  try {
+    const response = await fetchWithAuth(url, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      handleError(response, result, "Erreur lors de la mise à jour de la réservation");
+    }
+    return {
+      data: result as LoungeBooking,
+      status: "success",
+      message: "Réservation mise à jour avec succès",
     };
   } catch (error) {
     return createSafeError(error);
