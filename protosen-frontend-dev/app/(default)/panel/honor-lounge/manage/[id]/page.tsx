@@ -1,23 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  createLoungeClient,
   deleteLoungeClient,
+  getLoungeByIdClient,
+  updateLoungeClient,
 } from "@/features/honor-lounge/lib/apis-client";
-import type { LoungeStatus } from "@/features/honor-lounge/types";
-import { toast } from "sonner";
-import { useGetLounges } from "@/features/honor-lounge/hooks/use-get-lounges";
 import {
   AVAILABLE_AMENITIES,
   DAYS_OF_WEEK,
   LOUNGE_TYPES,
 } from "@/features/honor-lounge/lib/constants";
+import type { LoungeStatus } from "@/features/honor-lounge/types";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { hasPermission } from "@/lib/utils";
 
@@ -36,11 +37,13 @@ type FormValues = {
   timeSlots: Array<{ start: string; end: string }>;
 };
 
-export default function HonorLoungeManagePage() {
+export default function EditHonorLoungePage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
   const currentUser = useCurrentUser();
-  const [loading, setLoading] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const { data, isLoading, refetch } = useGetLounges(1, 100, "");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState<FormValues>({
     name: "",
     location: "",
@@ -56,26 +59,47 @@ export default function HonorLoungeManagePage() {
     timeSlots: [{ start: "09:00", end: "17:00" }],
   });
 
-  const lounges = useMemo(() => {
-    if (!data || "code" in data || "code" in data.data) {
-      return [];
-    }
-    return data.data.data;
-  }, [data]);
+  useEffect(() => {
+    const load = async () => {
+      if (!params.id) return;
+      const result = await getLoungeByIdClient(params.id);
+      if ("code" in result || ("data" in result && "code" in (result as any).data)) {
+        toast.error("Impossible de charger le salon.");
+        setLoading(false);
+        return;
+      }
+      const lounge = result.data;
+      setFormData({
+        name: lounge.name,
+        location: lounge.location,
+        description: lounge.description || "",
+        capacity: String(lounge.capacity),
+        hourlyRate: String(lounge.hourlyRate),
+        status: lounge.status,
+        loungeType: lounge.loungeType || LOUNGE_TYPES[0],
+        maxBookings: String(lounge.maxBookings || 5),
+        imageUrl: lounge.imageUrl || "",
+        amenities: Array.isArray(lounge.amenities) ? lounge.amenities : [],
+        availableDays: Array.isArray(lounge.availableDays) ? lounge.availableDays : [],
+        timeSlots:
+          Array.isArray(lounge.timeSlots) && lounge.timeSlots.length > 0
+            ? lounge.timeSlots
+            : [{ start: "09:00", end: "17:00" }],
+      });
+      setLoading(false);
+    };
+
+    load();
+  }, [params.id]);
+
+  const canSubmit = useMemo(
+    () => formData.name.trim() && formData.location.trim() && formData.availableDays.length > 0,
+    [formData],
+  );
   const canManageLounges =
     currentUser?.isAdmin ||
     currentUser?.isSuperAdmin ||
     hasPermission(currentUser?.accessGroup?.permissions || [], ["MANAGE_CONFERENCES"]);
-
-  if (!canManageLounges) {
-    return (
-      <div className="py-10">
-        <p className="text-sm text-muted-foreground">
-          Vous n&apos;avez pas les permissions pour gérer les salons.
-        </p>
-      </div>
-    );
-  }
 
   const toggleValueInArray = (field: "amenities" | "availableDays", value: string) => {
     setFormData((prev) => {
@@ -117,13 +141,13 @@ export default function HonorLoungeManagePage() {
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (formData.availableDays.length === 0) {
-      toast.error("Sélectionnez au moins un jour disponible.");
+    if (!canSubmit) {
+      toast.error("Renseignez les champs obligatoires et au moins un jour.");
       return;
     }
-    setLoading(true);
 
-    const payload = {
+    setSubmitting(true);
+    const res = await updateLoungeClient(params.id, {
       name: formData.name,
       location: formData.location,
       description: formData.description || undefined,
@@ -136,56 +160,72 @@ export default function HonorLoungeManagePage() {
       amenities: formData.amenities,
       availableDays: formData.availableDays,
       timeSlots: formData.timeSlots,
-    };
-
-    const res = await createLoungeClient(payload);
+    });
     if ("code" in res || ("data" in res && "code" in (res as any).data)) {
-      toast.error((res as any).message || "Erreur lors de la création");
-      setLoading(false);
+      toast.error((res as any).message || "Erreur lors de la mise à jour du salon");
+      setSubmitting(false);
       return;
     }
-
-    toast.success((res as any).message || "Salon créé avec succès");
-    setFormData({
-      name: "",
-      location: "",
-      description: "",
-      capacity: "1",
-      hourlyRate: "0",
-      status: "ACTIVE",
-      loungeType: LOUNGE_TYPES[0],
-      maxBookings: "5",
-      imageUrl: "",
-      amenities: [],
-      availableDays: [],
-      timeSlots: [{ start: "09:00", end: "17:00" }],
-    });
-    setLoading(false);
-    refetch();
+    toast.success("Salon mis à jour avec succès.");
+    setSubmitting(false);
+    router.push("/panel/honor-lounge/manage");
+    router.refresh();
   };
 
-  const onDelete = async (id: string) => {
-    const confirmed = window.confirm("Confirmer la suppression de ce salon ?");
-    if (!confirmed) return;
-    setDeletingId(id);
-    const res = await deleteLoungeClient(id);
+  const onDelete = async () => {
+    if (!confirm("Confirmer la suppression de ce salon ?")) return;
+    setDeleting(true);
+    const res = await deleteLoungeClient(params.id);
     if ("code" in res || ("data" in res && "code" in (res as any).data)) {
       toast.error((res as any).message || "Erreur lors de la suppression du salon");
-      setDeletingId(null);
+      setDeleting(false);
       return;
     }
     toast.success(res.message || "Salon supprimé.");
-    setDeletingId(null);
-    refetch();
+    setDeleting(false);
+    router.push("/panel/honor-lounge/manage");
+    router.refresh();
   };
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Gestion des salons</h1>
+  if (loading) {
+    return (
+      <div className="py-10 flex items-center justify-center">
+        <Loader2 className="size-5 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!canManageLounges) {
+    return (
+      <div className="py-10">
         <p className="text-sm text-muted-foreground">
-          Ajouter et consulter les salons d&apos;honneur.
+          Vous n&apos;avez pas les permissions pour modifier un salon.
         </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Button variant="ghost" asChild className="mb-2 px-0">
+            <Link href="/panel/honor-lounge/manage">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour à la gestion
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-semibold">Modifier le salon</h1>
+        </div>
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={onDelete}
+          disabled={deleting || submitting}
+        >
+          {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+          Supprimer
+        </Button>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4 border rounded-lg p-4">
@@ -352,48 +392,11 @@ export default function HonorLoungeManagePage() {
           </div>
         </div>
 
-        <Button type="submit" disabled={loading} className="w-full">
-          {loading ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
-          Créer le salon
+        <Button type="submit" disabled={!canSubmit || submitting} className="w-full">
+          {submitting ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
+          Enregistrer les modifications
         </Button>
       </form>
-
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Salons existants</h2>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Chargement des salons...</p>
-        ) : lounges.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun salon créé.</p>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {lounges.map((lounge) => (
-              <div key={lounge.id} className="border rounded-md p-3 space-y-2">
-                <p className="font-medium">{lounge.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {lounge.location} — {lounge.capacity} places
-                </p>
-                <div className="flex gap-2">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/panel/honor-lounge/manage/${lounge.id}`}>Modifier</Link>
-                  </Button>
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href={`/panel/honor-lounge/${lounge.id}`}>Voir</Link>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    type="button"
-                    disabled={deletingId === lounge.id}
-                    onClick={() => onDelete(lounge.id)}
-                  >
-                    {deletingId === lounge.id ? "Suppression..." : "Supprimer"}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

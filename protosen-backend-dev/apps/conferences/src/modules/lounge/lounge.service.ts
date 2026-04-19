@@ -54,6 +54,60 @@ export class LoungeService {
     return this.canManageLounges(user);
   }
 
+  private parseStringArray(input: unknown): string[] {
+    if (Array.isArray(input)) {
+      return input.filter((value): value is string => typeof value === 'string');
+    }
+    return [];
+  }
+
+  private parseTimeSlots(input: unknown): Array<{ start: string; end: string }> {
+    if (!Array.isArray(input)) {
+      return [];
+    }
+    return input
+      .filter(
+        (slot): slot is { start: string; end: string } =>
+          typeof slot === 'object' &&
+          slot !== null &&
+          typeof (slot as { start?: unknown }).start === 'string' &&
+          typeof (slot as { end?: unknown }).end === 'string',
+      )
+      .map((slot) => ({ start: slot.start, end: slot.end }));
+  }
+
+  private buildBookingQrData(booking: {
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    numGuests: number;
+    totalAmount: number;
+    guestFirstName: string | null;
+    guestLastName: string | null;
+    userId: string;
+    lounge: { name: string; location: string; amenities: unknown };
+  }) {
+    const customerName =
+      `${booking.guestFirstName || ''} ${booking.guestLastName || ''}`.trim() ||
+      booking.userId;
+    const amenities = Array.isArray(booking.lounge.amenities)
+      ? booking.lounge.amenities
+      : [];
+
+    return JSON.stringify({
+      booking_id: booking.id,
+      lounge_name: booking.lounge.name,
+      lounge_location: booking.lounge.location,
+      customer_name: customerName,
+      start_time: booking.startTime.toISOString(),
+      end_time: booking.endTime.toISOString(),
+      num_guests: booking.numGuests,
+      total_amount: booking.totalAmount,
+      amenities,
+      generated_at: new Date().toISOString(),
+    });
+  }
+
   async create(user: User, dto: CreateLoungeDto) {
     try {
       if (!this.canAccessLoungeModule(user) || !this.canManageLounges(user)) {
@@ -263,6 +317,75 @@ export class LoungeService {
         );
       }
 
+      const availableDays = this.parseStringArray(lounge.availableDays);
+      if (availableDays.length > 0) {
+        const dayLabels = [
+          'Dimanche',
+          'Lundi',
+          'Mardi',
+          'Mercredi',
+          'Jeudi',
+          'Vendredi',
+          'Samedi',
+        ];
+        const startDay = dayLabels[startTime.getDay()];
+        if (!availableDays.includes(startDay)) {
+          throw new BadRequestException(
+            `Ce salon n'est pas disponible le ${startDay}.`,
+          );
+        }
+      }
+
+      if (lounge.maxBookings && lounge.maxBookings > 0) {
+        const dayStart = new Date(startTime);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(startTime);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        const dayBookings = await this.prisma.loungeBooking.count({
+          where: {
+            loungeId: lounge.id,
+            startTime: {
+              gte: dayStart,
+              lte: dayEnd,
+            },
+            status: {
+              in: [
+                LoungeBookingStatus.PENDING,
+                LoungeBookingStatus.CONFIRMED,
+                LoungeBookingStatus.COMPLETED,
+              ],
+            },
+          },
+        });
+
+        if (dayBookings >= lounge.maxBookings) {
+          throw new BadRequestException(
+            `Le nombre maximum de réservations (${lounge.maxBookings}) est atteint pour cette date.`,
+          );
+        }
+      }
+
+      const timeSlots = this.parseTimeSlots(lounge.timeSlots);
+      if (timeSlots.length > 0 && startTime.toDateString() === endTime.toDateString()) {
+        const minutesFromTimeString = (value: string) => {
+          const [hours, minutes] = value.split(':').map((part) => Number(part));
+          return hours * 60 + minutes;
+        };
+        const bookingStartMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+        const bookingEndMinutes = endTime.getHours() * 60 + endTime.getMinutes();
+        const fitsAtLeastOneSlot = timeSlots.some((slot) => {
+          const slotStart = minutesFromTimeString(slot.start);
+          const slotEnd = minutesFromTimeString(slot.end);
+          return bookingStartMinutes >= slotStart && bookingEndMinutes <= slotEnd;
+        });
+        if (!fitsAtLeastOneSlot) {
+          throw new BadRequestException(
+            'La réservation est en dehors des créneaux horaires configurés pour ce salon.',
+          );
+        }
+      }
+
       const overlap = await this.prisma.loungeBooking.findFirst({
         where: {
           loungeId: dto.loungeId,
@@ -447,6 +570,9 @@ export class LoungeService {
 
       const booking = await this.prisma.loungeBooking.findUnique({
         where: { id },
+        include: {
+          lounge: true,
+        },
       });
       if (!booking) {
         throw new NotFoundException('Réservation introuvable.');
@@ -480,6 +606,10 @@ export class LoungeService {
           processedBy: user.id,
           processedAt: new Date(),
           paymentStatus: dto.paymentStatus ?? booking.paymentStatus,
+          qrCodeData:
+            dto.status === LoungeBookingStatus.CONFIRMED
+              ? booking.qrCodeData || this.buildBookingQrData(booking)
+              : booking.qrCodeData,
         },
       });
 

@@ -65,6 +65,8 @@ type CreateLoungeInput = {
   timeSlots?: Array<{ start: string; end: string }>;
 };
 
+type UpdateLoungeInput = Partial<CreateLoungeInput>;
+
 type UpdateLoungeBookingStatusInput = {
   status: LoungeBookingStatus;
   adminNotes?: string;
@@ -112,6 +114,49 @@ export const createLoungeClient = async (data: CreateLoungeInput) => {
       data: result as Lounge,
       status: "success",
       message: "Salon créé avec succès",
+    };
+  } catch (error) {
+    return createSafeError(error);
+  }
+};
+
+export const updateLoungeClient = async (id: string, data: UpdateLoungeInput) => {
+  const url = `${BACKEND_URL_CONFERENCES}/lounge/${id}`;
+
+  try {
+    const response = await fetchWithAuth(url, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      handleError(response, result, "Erreur lors de la mise à jour du salon");
+    }
+    return {
+      data: result as Lounge,
+      status: "success",
+      message: "Salon mis à jour avec succès",
+    };
+  } catch (error) {
+    return createSafeError(error);
+  }
+};
+
+export const deleteLoungeClient = async (id: string) => {
+  const url = `${BACKEND_URL_CONFERENCES}/lounge/${id}`;
+
+  try {
+    const response = await fetchWithAuth(url, {
+      method: "DELETE",
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      handleError(response, result, "Erreur lors de la suppression du salon");
+    }
+    return {
+      data: result as { message: string },
+      status: "success",
+      message: result?.message || "Salon supprimé avec succès",
     };
   } catch (error) {
     return createSafeError(error);

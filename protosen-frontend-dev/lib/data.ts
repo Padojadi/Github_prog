@@ -154,11 +154,19 @@ const honorLoungeMenu: Ilink[] = [
 	},
 	{
 		href: "/panel/honor-lounge/manage",
-		label: "Ajouter un salon",
+		label: "Gestion des salons",
 		accessPermissions: [
 			"ACCESS_HONOR_LOUNGE_MODULE",
 			"ACCESS_CONFERENCE_MODULE",
 			"MANAGE_CONFERENCES",
+		],
+	},
+	{
+		href: "/panel/honor-lounge/access-request",
+		label: "Demande d'accès",
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
 		],
 	},
 	{
@@ -175,6 +183,15 @@ const honorLoungeMenu: Ilink[] = [
 		accessPermissions: [
 			"ACCESS_HONOR_LOUNGE_MODULE",
 			"ACCESS_CONFERENCE_MODULE",
+		],
+	},
+	{
+		href: "/panel/honor-lounge/booking-history",
+		label: "Historique des réservations",
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+			"MANAGE_CONFERENCES",
 		],
 	},
 	{

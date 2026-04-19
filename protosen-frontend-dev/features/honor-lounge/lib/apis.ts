@@ -26,6 +26,7 @@ type CreateBookingInput = {
 	flightNumber?: string;
 	flightOrigin?: string;
 	flightArrivalTime?: string;
+	companions?: Record<string, unknown>[];
 };
 
 export const createLoungeBooking = async (

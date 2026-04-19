@@ -3,22 +3,26 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Clock, Users } from "lucide-react";
+import { Calendar, Clock, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useGetLounges } from "@/features/honor-lounge/hooks/use-get-lounges";
 import { createLoungeBooking } from "@/features/honor-lounge/lib/apis";
-import type { Lounge } from "@/features/honor-lounge/types";
+import type { Lounge, LoungeCompanion } from "@/features/honor-lounge/types";
+import useCurrentUser from "@/hooks/useCurrentUser";
+import { hasPermission } from "@/lib/utils";
 
 export default function NewHonorLoungeBookingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentUser = useCurrentUser();
   const selectedLoungeId = searchParams.get("loungeId") || "";
   const { data, isLoading } = useGetLounges(1, 100, "", "ACTIVE");
 
   const [submitting, setSubmitting] = useState(false);
+  const [companions, setCompanions] = useState<LoungeCompanion[]>([]);
   const [formData, setFormData] = useState({
     loungeId: selectedLoungeId,
     startTime: "",
@@ -31,6 +35,13 @@ export default function NewHonorLoungeBookingPage() {
     guestOrganization: "",
     guestPhone: "",
     guestNationality: "",
+    passportNumber: "",
+    travelPurpose: "",
+    airline: "",
+    flightNumber: "",
+    flightOrigin: "",
+    flightArrivalTime: "",
+    paymentMethod: "ON_SITE" as "ON_SITE" | "ONLINE",
   });
 
   const lounges = useMemo(() => {
@@ -51,6 +62,42 @@ export default function NewHonorLoungeBookingPage() {
     const hours = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60 * 60));
     return Number((hours * Number(currentLounge.hourlyRate)).toFixed(2));
   }, [currentLounge, formData.startTime, formData.endTime]);
+  const canAccessLounge =
+    currentUser?.isAdmin ||
+    currentUser?.isSuperAdmin ||
+    hasPermission(currentUser?.accessGroup?.permissions || [], [
+      "ACCESS_HONOR_LOUNGE_MODULE",
+      "ACCESS_CONFERENCE_MODULE",
+    ]);
+
+  const addCompanion = () => {
+    setCompanions((prev) => [
+      ...prev,
+      {
+        firstName: "",
+        lastName: "",
+        relation: "",
+        passportNumber: "",
+        nationality: "",
+      },
+    ]);
+  };
+
+  const updateCompanion = (
+    index: number,
+    key: keyof LoungeCompanion,
+    value: string,
+  ) => {
+    setCompanions((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [key]: value };
+      return next;
+    });
+  };
+
+  const removeCompanion = (index: number) => {
+    setCompanions((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -67,19 +114,44 @@ export default function NewHonorLoungeBookingPage() {
     }
 
     setSubmitting(true);
+    const specialRequests = [
+      formData.specialRequests,
+      formData.passportNumber ? `Passeport: ${formData.passportNumber}` : "",
+      formData.travelPurpose ? `Motif: ${formData.travelPurpose}` : "",
+      companions.length > 0
+        ? `Accompagnants: ${companions
+            .map((item) =>
+              [item.firstName, item.lastName, item.relation]
+                .filter(Boolean)
+                .join(" ")
+                .trim(),
+            )
+            .filter(Boolean)
+            .join(", ")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const response = await createLoungeBooking(
       {
         loungeId: formData.loungeId,
         startTime: formData.startTime,
         endTime: formData.endTime,
         numGuests: Number(formData.numGuests),
-        specialRequests: formData.specialRequests || undefined,
+        specialRequests,
+        paymentMethod: formData.paymentMethod,
         guestFirstName: formData.guestFirstName || undefined,
         guestLastName: formData.guestLastName || undefined,
         guestFunction: formData.guestFunction || undefined,
         guestOrganization: formData.guestOrganization || undefined,
         guestPhone: formData.guestPhone || undefined,
         guestNationality: formData.guestNationality || undefined,
+        airline: formData.airline || undefined,
+        flightNumber: formData.flightNumber || undefined,
+        flightOrigin: formData.flightOrigin || undefined,
+        flightArrivalTime: formData.flightArrivalTime || undefined,
+        companions,
       },
       "Erreur de création de la réservation",
       "Réservation créée avec succès",
@@ -95,6 +167,16 @@ export default function NewHonorLoungeBookingPage() {
     router.push("/panel/honor-lounge/bookings");
     router.refresh();
   };
+
+  if (!canAccessLounge) {
+    return (
+      <div className="py-10">
+        <p className="text-sm text-muted-foreground">
+          Vous n&apos;avez pas les permissions pour créer une réservation.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -224,6 +306,123 @@ export default function NewHonorLoungeBookingPage() {
               }
               rows={3}
             />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              placeholder="Numéro de passeport"
+              value={formData.passportNumber}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, passportNumber: e.target.value }))
+              }
+            />
+            <Input
+              placeholder="Motif du voyage"
+              value={formData.travelPurpose}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, travelPurpose: e.target.value }))
+              }
+            />
+            <Input
+              placeholder="Compagnie aérienne"
+              value={formData.airline}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, airline: e.target.value }))
+              }
+            />
+            <Input
+              placeholder="Numéro de vol"
+              value={formData.flightNumber}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, flightNumber: e.target.value }))
+              }
+            />
+            <Input
+              placeholder="Provenance du vol"
+              value={formData.flightOrigin}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, flightOrigin: e.target.value }))
+              }
+            />
+            <Input
+              type="datetime-local"
+              value={formData.flightArrivalTime}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, flightArrivalTime: e.target.value }))
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Mode de paiement</label>
+            <select
+              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              value={formData.paymentMethod}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  paymentMethod: event.target.value as "ON_SITE" | "ONLINE",
+                }))
+              }
+            >
+              <option value="ON_SITE">Paiement sur place</option>
+              <option value="ONLINE">Paiement en ligne</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Accompagnants</label>
+              <Button type="button" variant="outline" size="sm" onClick={addCompanion}>
+                <Plus className="h-4 w-4 mr-2" />
+                Ajouter
+              </Button>
+            </div>
+            {companions.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Aucun accompagnant.</p>
+            ) : (
+              <div className="space-y-2">
+                {companions.map((companion, index) => (
+                  <div key={index} className="grid gap-2 sm:grid-cols-5">
+                    <Input
+                      placeholder="Prénom"
+                      value={companion.firstName}
+                      onChange={(event) =>
+                        updateCompanion(index, "firstName", event.target.value)
+                      }
+                    />
+                    <Input
+                      placeholder="Nom"
+                      value={companion.lastName}
+                      onChange={(event) =>
+                        updateCompanion(index, "lastName", event.target.value)
+                      }
+                    />
+                    <Input
+                      placeholder="Relation"
+                      value={companion.relation || ""}
+                      onChange={(event) =>
+                        updateCompanion(index, "relation", event.target.value)
+                      }
+                    />
+                    <Input
+                      placeholder="Passeport"
+                      value={companion.passportNumber || ""}
+                      onChange={(event) =>
+                        updateCompanion(index, "passportNumber", event.target.value)
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => removeCompanion(index)}
+                    >
+                      Supprimer
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2">

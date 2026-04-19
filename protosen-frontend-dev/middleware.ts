@@ -69,6 +69,17 @@ export default withAuth(
 		}
 
 		if (
+			req.nextUrl.pathname.startsWith("/panel/honor-lounge/booking-history") &&
+			!hasPermission(userPermissions, [
+				"MANAGE_CONFERENCES",
+			]) &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
 			req.nextUrl.pathname.startsWith("/panel/diplomatic") &&
 			!hasPermission(userPermissions, [
 				"ACCESS_CARD_MODULE",

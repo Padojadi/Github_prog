@@ -75,6 +75,15 @@ export type LoungeBooking = {
   histories?: LoungeBookingHistory[];
 };
 
+export type LoungeCompanion = {
+  firstName: string;
+  lastName: string;
+  passportNumber?: string;
+  nationality?: string;
+  relation?: string;
+  function?: string;
+};
+
 export type LoungeListResponse = {
   currentPage: number;
   perPage: number;
