@@ -25,6 +25,9 @@ export default function AccessRoleSection() {
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const currentUser = useCurrentUser();
+  const hasApiError = data?.status === "error";
+  const accessRoles =
+    data?.status === "success" && Array.isArray(data?.data) ? data.data : [];
 
   return (
     <div className="p-4 mx-auto">
@@ -41,12 +44,20 @@ export default function AccessRoleSection() {
 
       {isLoading ? (
         <TableSkeleton />
-      ) : error ? (
-        <ErrorComponent error={error} retry={refetch} />
+      ) : error || hasApiError ? (
+        <ErrorComponent
+          error={
+            error ||
+            new Error(
+              data?.message || "Erreur lors du chargement des groupes d'accès.",
+            )
+          }
+          retry={refetch}
+        />
       ) : (
         data && (
           <DataTable
-            data={data.data}
+            data={accessRoles}
             columns={columns}
             title="Groupes d'accès"
             dataName="groupes d'accès"

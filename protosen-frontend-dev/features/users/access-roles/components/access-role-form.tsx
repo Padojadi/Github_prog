@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -15,18 +14,11 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Info, Loader, Loader2, Trash } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { BsFloppy } from "react-icons/bs";
 import { createAccessRole, updateAccessRole } from "../lib/apis";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AccessRole } from "../types";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-  Tooltip,
-} from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import { permissions } from "../lib/data";
 import { toast } from "sonner";
@@ -51,7 +43,7 @@ const conferencesPermissionList = [
   "CONFIRM_CONFERENCE_REQUEST",
   "ACCEPT_CONFERENCE_REQUEST",
   "MANAGE_CONFERENCES",
-];
+] as string[];
 
 const HONOR_LOUNGE_PERMISSION = "ACCESS_HONOR_LOUNGE_MODULE";
 
@@ -63,7 +55,9 @@ export function AccessRoleForm({ initialData, onClose }: AccessRoleFormProps) {
     defaultValues: initialData
       ? {
           name: initialData?.name,
-          permissions: initialData?.permissions,
+          permissions: Array.isArray(initialData?.permissions)
+            ? initialData.permissions
+            : [],
         }
       : { name: "", permissions: [] },
   });
@@ -149,13 +143,16 @@ export function AccessRoleForm({ initialData, onClose }: AccessRoleFormProps) {
                       </div>
                       <FormControl>
                         <Switch
-                          checked={field.value.includes(permission.value)}
+                          checked={Array.isArray(field.value) && field.value.includes(permission.value)}
                           onCheckedChange={(value) => {
+                            const currentValues = Array.isArray(field.value)
+                              ? field.value
+                              : [];
                             if (
-                              field.value.includes(permission.value) &&
+                              currentValues.includes(permission.value) &&
                               !value
                             ) {
-                              let newValue = field.value.filter(
+                              let newValue = currentValues.filter(
                                 (item) => item !== permission.value
                               );
                               if (
@@ -173,12 +170,12 @@ export function AccessRoleForm({ initialData, onClose }: AccessRoleFormProps) {
                                 conferencesPermissionList.includes(
                                   permission.value
                                 ) &&
-                                !field.value.includes(
+                                !currentValues.includes(
                                   "ACCESS_CONFERENCE_MODULE"
                                 )
                               ) {
                                 field.onChange([
-                                  ...field.value,
+                                  ...currentValues,
                                   permission.value,
                                   "ACCESS_CONFERENCE_MODULE",
                                   HONOR_LOUNGE_PERMISSION,
@@ -187,17 +184,17 @@ export function AccessRoleForm({ initialData, onClose }: AccessRoleFormProps) {
                               }
                               if (
                                 permission.value === "ACCESS_CONFERENCE_MODULE" &&
-                                !field.value.includes(HONOR_LOUNGE_PERMISSION)
+                                !currentValues.includes(HONOR_LOUNGE_PERMISSION)
                               ) {
                                 field.onChange([
-                                  ...field.value,
+                                  ...currentValues,
                                   permission.value,
                                   HONOR_LOUNGE_PERMISSION,
                                 ]);
                                 return;
                               }
                               field.onChange([
-                                ...field.value,
+                                ...currentValues,
                                 permission.value,
                               ]);
                             }

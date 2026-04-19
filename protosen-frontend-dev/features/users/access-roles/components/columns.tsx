@@ -69,27 +69,33 @@ export const columns: ColumnDef<AccessRole>[] = [
     },
     cell: ({ row }) => {
       const accessRole = row.original;
+      const rolePermissions = Array.isArray(accessRole.permissions)
+        ? accessRole.permissions
+        : [];
       return (
         <Popover>
           <PopoverTrigger>
             <div className="flex items-center gap-1 p-1">
-              {translatePermission(accessRole.permissions?.[0])}{" "}
-              {accessRole.permissions.length > 1
-                ? `+${accessRole.permissions.length - 1}`
+              {translatePermission(rolePermissions?.[0]) || "Aucune permission"}{" "}
+              {rolePermissions.length > 1
+                ? `+${rolePermissions.length - 1}`
                 : ""}
               <ChevronDown className="size-4" />
             </div>
           </PopoverTrigger>
           <PopoverContent className="bg-slate-50 dark:bg-slate-900 max-h-80 overflow-y-auto w-80 md:w-[500px]">
             <ul className="flex flex-col gap-4">
-              {accessRole.permissions.map((item) => {
+              {rolePermissions.map((item) => {
                 let currentPermission = permissions.find(
                   (permission) => item === permission.value
                 );
                 return (
-                  <li className="text-foreground font-semibold flex items-start gap-2">
+                  <li
+                    key={`${accessRole.id}-${item}`}
+                    className="text-foreground font-semibold flex items-start gap-2"
+                  >
                     <div className="bg-slate-300 dark:bg-slate-950 flex justify-center items-center p-1 rounded mt-1">
-                      {icons[item]}
+                      {icons[item] ?? <RiEyeFill size={16} />}
                     </div>
                     <div className="">
                       <h5>{translatePermission(item)}</h5>

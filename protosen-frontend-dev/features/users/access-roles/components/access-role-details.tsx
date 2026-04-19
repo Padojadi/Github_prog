@@ -5,6 +5,10 @@ interface AccessRoleDetailsProps {
 }
 
 export function AccessRoleDetails({ accessRole }: AccessRoleDetailsProps) {
+  const rolePermissions = Array.isArray(accessRole.permissions)
+    ? accessRole.permissions
+    : [];
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -14,7 +18,7 @@ export function AccessRoleDetails({ accessRole }: AccessRoleDetailsProps) {
       <div className="space-y-2">
         <h3 className="text-muted-foreground">Permission:</h3>
         <ul className="list-disc pl-5">
-          {accessRole.permissions.map((observation, index) => (
+          {rolePermissions.map((observation, index) => (
             <li
               key={`observation-${index}`}
               className="font-semibold text-foreground"
