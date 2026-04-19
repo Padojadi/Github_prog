@@ -19,7 +19,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { useQuery } from "@tanstack/react-query";
 import { getAccessRoles } from "@/features/users/access-roles/lib/apis";
 import { AccessRole, TPermission } from "@/features/users/access-roles/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { translatePermission } from "@/features/users/access-roles/lib/utils";
 
 interface UserFormProps {
@@ -40,6 +40,12 @@ export default function UserForm({ initialValues }: UserFormProps) {
   const [accessRoleSelected, setAccessRoleSelected] = useState<
     AccessRole | undefined
   >();
+  const [selectedRole, setSelectedRole] = useState(
+    initialValues?.role || "user",
+  );
+  const [selectedAccessGroupId, setSelectedAccessGroupId] = useState(
+    initialValues?.accessGroupId || "",
+  );
 
   const { data, error } = useQuery({
     queryKey: ["access-groups"],
@@ -51,6 +57,30 @@ export default function UserForm({ initialValues }: UserFormProps) {
       return response;
     },
   });
+  const accessRoles =
+    data?.status === "success" && Array.isArray(data?.data) ? data.data : [];
+
+  useEffect(() => {
+    if (accessRoles.length === 0) {
+      setSelectedAccessGroupId("");
+      setAccessRoleSelected(undefined);
+      return;
+    }
+
+    if (!selectedAccessGroupId) {
+      setSelectedAccessGroupId(accessRoles[0].id);
+      setAccessRoleSelected(accessRoles[0]);
+      return;
+    }
+
+    const selectedRole = accessRoles.find(
+      (item: AccessRole) => item.id === selectedAccessGroupId,
+    );
+    setAccessRoleSelected(selectedRole || accessRoles[0]);
+    if (!selectedRole) {
+      setSelectedAccessGroupId(accessRoles[0].id);
+    }
+  }, [accessRoles, selectedAccessGroupId]);
 
   async function formAction(formData: FormData) {
     let { message, errors, status } = initialValues
@@ -134,12 +164,15 @@ export default function UserForm({ initialValues }: UserFormProps) {
           {initialValues && (
             <Input type="hidden" name="userId" value={initialValues.id} />
           )}
-          {data && data.data && (
-            <Input type="hidden" name="accessGroupId" value={data.data[0].id} />
-          )}
+          <Input type="hidden" name="role" value={selectedRole} />
+          <Input type="hidden" name="accessGroupId" value={selectedAccessGroupId} />
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
-            <Select name="role" required defaultValue={initialValues?.role}>
+            <Select
+              required
+              value={selectedRole}
+              onValueChange={(value) => setSelectedRole(value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionnez un rôle" />
               </SelectTrigger>
@@ -188,22 +221,31 @@ export default function UserForm({ initialValues }: UserFormProps) {
           <div className="space-y-2">
             <Label htmlFor="accessGroupId">Groupe d'accès</Label>
             <Select
-              name="accessGroupId"
               onValueChange={(value) => {
+                setSelectedAccessGroupId(value);
                 setAccessRoleSelected(
-                  data?.data.find((item: AccessRole) => item.id === value)
+                  accessRoles.find((item: AccessRole) => item.id === value)
                 );
               }}
               required
-              defaultValue={initialValues?.accessGroupId}
+              value={selectedAccessGroupId}
+              disabled={accessRoles.length === 0}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionnez un groupe d'accès" />
               </SelectTrigger>
               <SelectContent position="popper">
-                {data?.data.map((item: AccessRole) => (
-                  <SelectItem value={item.id}>{item.name}</SelectItem>
-                ))}
+                {accessRoles.length > 0 ? (
+                  accessRoles.map((item: AccessRole) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="__no_group__" disabled>
+                    Aucun groupe d'accès disponible
+                  </SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -213,7 +255,10 @@ export default function UserForm({ initialValues }: UserFormProps) {
                 Permissions du groupe d'accès
               </h3>
               <ul className="list-disc pl-5">
-                {accessRoleSelected.permissions.map((item) => (
+                {(Array.isArray(accessRoleSelected.permissions)
+                  ? accessRoleSelected.permissions
+                  : []
+                ).map((item) => (
                   <li className="text-muted-foreground">
                     {translatePermission(item)}
                   </li>

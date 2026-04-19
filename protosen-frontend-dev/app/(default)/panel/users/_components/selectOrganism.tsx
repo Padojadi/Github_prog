@@ -2,8 +2,6 @@
 
 import React, { useEffect, useId, useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Backend_URL } from "@/lib/constants";
-import { getSession } from "next-auth/react";
 import Select from "react-select";
 import { fetchInstitutionsR } from "@/lib/actions/diplomaticCards/other";
 
@@ -12,38 +10,38 @@ interface ISelectOrganismProps {
   initialOrganismId?: string;
 }
 
+type InstitutionOption = {
+  value: string;
+  label: string;
+};
+
 const SelectOrganism: React.FC<ISelectOrganismProps> = ({
   name,
   initialOrganismId,
 }) => {
-  const [institutions, setInstitutions] = useState([]);
-  const [selectedOrg, setSelectedOrg] = useState<string | null>("");
+  const [institutions, setInstitutions] = useState<InstitutionOption[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState<InstitutionOption | null>(null);
+  const [selectedOrgId, setSelectedOrgId] = useState<string>("");
   useEffect(() => {
     const fetchInstitutions = async () => {
-      const session = await getSession();
-      const token = session?.backendTokens?.accessToken;
       try {
-        // const response = await fetch(`${Backend_URL}/institution/data`, {
-        //   method: "GET",
-        //   headers: {
-        //     "Content-Type": "application/json",
-        //     Authorization: "Bearer " + token,
-        //   },
-        // });
-
         const response = await fetchInstitutionsR();
-        // const res = await response.json();
         const formattedInstitutions = response.data.rows.map((item: any) => ({
           value: item.id,
           label: item.libelle,
         }));
         setInstitutions(formattedInstitutions);
         if (initialOrganismId) {
-          setSelectedOrg(
+          const initialOption =
             formattedInstitutions.find(
-              (institution: any) => institution.value === initialOrganismId
-            ).value || ""
-          );
+              (institution: InstitutionOption) =>
+                institution.value === initialOrganismId,
+            ) || null;
+          setSelectedOrg(initialOption);
+          setSelectedOrgId(initialOption?.value || "");
+        } else if (formattedInstitutions.length > 0) {
+          setSelectedOrg(formattedInstitutions[0]);
+          setSelectedOrgId(formattedInstitutions[0].value);
         }
       } catch (error) {
         console.error("Error fetching institutions:", error);
@@ -55,15 +53,18 @@ const SelectOrganism: React.FC<ISelectOrganismProps> = ({
   return (
     <>
       <Label htmlFor={name}>Organisme</Label>
+      <input type="hidden" name={name} value={selectedOrgId} />
       <Select
         placeholder="Selectionner une carte ..."
-        onChange={(value) => setSelectedOrg(value)}
+        onChange={(value) => {
+          const option = (value as InstitutionOption | null) || null;
+          setSelectedOrg(option);
+          setSelectedOrgId(option?.value || "");
+        }}
         value={selectedOrg}
-        name={name}
         instanceId={useId()}
         noOptionsMessage={() => "Aucune option"}
         className="w-full"
-        required
         options={institutions}
       />
     </>

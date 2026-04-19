@@ -69,6 +69,9 @@ export async function createNewUser(formData: FormData) {
   formData.forEach((value, key) => {
     object[key] = value;
   });
+  if (!object.role) {
+    object.role = "user";
+  }
 
   try {
     const response = await fetch(`${Backend_URL}/auth/super_admin/register`, {
@@ -83,7 +86,8 @@ export async function createNewUser(formData: FormData) {
 
     if (response.status !== 200) {
       return {
-        message: "Erreur lors de la creation de l'utilisateur",
+        message:
+          result?.message || "Erreur lors de la creation de l'utilisateur",
         status: "error",
         errors: result,
       };
