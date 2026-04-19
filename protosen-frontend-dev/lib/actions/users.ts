@@ -6,6 +6,8 @@ import { Backend_URL } from "../constants";
 import { revalidatePath } from "next/cache";
 import { fetchData } from "./common";
 
+const backendAuthBaseUrl = process.env.BACKEND_URL_INTERNAL || Backend_URL || "";
+
 export const fetchUsers = async () => {
   const session = await getServerSession(authOptions);
   try {
@@ -64,6 +66,7 @@ export async function createNewUser(formData: FormData) {
   const session = await getServerSession(authOptions);
 
   const token = session?.backendTokens?.accessToken;
+  let result: any = {};
 
   const object: any = {};
   formData.forEach((value, key) => {
@@ -74,7 +77,13 @@ export async function createNewUser(formData: FormData) {
   }
 
   try {
-    const response = await fetch(`${Backend_URL}/auth/super_admin/register`, {
+    if (!backendAuthBaseUrl) {
+      return {
+        message: "Configuration backend manquante pour créer un utilisateur",
+        status: "error",
+      };
+    }
+    const response = await fetch(`${backendAuthBaseUrl}/auth/super_admin/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -82,7 +91,11 @@ export async function createNewUser(formData: FormData) {
       },
       body: JSON.stringify(object),
     });
-    var result = await response.json();
+    try {
+      result = await response.json();
+    } catch {
+      result = {};
+    }
 
     if (response.status !== 200) {
       return {
