@@ -4,11 +4,13 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useGetLoungeBookings } from "@/features/honor-lounge/hooks/use-get-lounges";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import type { LoungeBookingStatus } from "@/features/honor-lounge/types";
 
 function statusLabel(status: string) {
   const mapping: Record<string, string> = {
@@ -27,11 +29,19 @@ function statusVariant(status: string): "default" | "destructive" | "secondary" 
 }
 
 export default function HonorLoungeBookingsPage() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const bookingStatus = searchParams.get("bookingStatus") || undefined;
   const limit = 10;
 
-  const { data, isLoading, isFetching } = useGetLoungeBookings(page, limit, search);
+  const { data, isLoading, isFetching } = useGetLoungeBookings(
+    page,
+    limit,
+    search,
+    undefined,
+    bookingStatus as LoungeBookingStatus | undefined,
+  );
   const bookings =
     data && !("code" in data) && !("code" in data.data) ? data.data.data : [];
   const totalPages =
@@ -42,7 +52,14 @@ export default function HonorLoungeBookingsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Mes réservations - Salon d'honneur</h1>
+        <div>
+          <h1 className="text-2xl font-semibold">Mes réservations - Salon d'honneur</h1>
+          {bookingStatus ? (
+            <p className="text-xs text-muted-foreground mt-1">
+              Filtre actif: {statusLabel(bookingStatus)}
+            </p>
+          ) : null}
+        </div>
         <Button asChild>
           <Link href="/panel/honor-lounge">Nouvelle réservation</Link>
         </Button>

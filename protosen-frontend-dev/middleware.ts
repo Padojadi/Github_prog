@@ -12,6 +12,7 @@ export default withAuth(
 		const isAdmin = req.nextauth.token?.user.role === "admin";
 		const isSuperAdmin = req.nextauth.token?.user.role === "super_admin";
 		const user = req.nextauth.token?.user;
+		const userPermissions = user?.accessGroup.permissions || [];
 		if (req.nextauth.token?.error === "RefreshAccessTokenError") {
 			return NextResponse.redirect(new URL("/signin", req.nextUrl));
 		}
@@ -37,7 +38,7 @@ export default withAuth(
 
 		if (
 			req.nextUrl.pathname.startsWith("/panel/conferences") &&
-			!hasPermission(user?.accessGroup.permissions || [], [
+			!hasPermission(userPermissions, [
 				"ACCESS_CONFERENCE_MODULE",
 			])
 		) {
@@ -46,25 +47,30 @@ export default withAuth(
 
 		if (
 			req.nextUrl.pathname.startsWith("/panel/honor-lounge") &&
-			!hasPermission(user?.accessGroup.permissions || [], [
+			!hasPermission(userPermissions, [
 				"ACCESS_HONOR_LOUNGE_MODULE",
-			])
+				"ACCESS_CONFERENCE_MODULE",
+			]) &&
+			!isAdmin &&
+			!isSuperAdmin
 		) {
 			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
 		}
 
 		if (
 			req.nextUrl.pathname.startsWith("/panel/honor-lounge/manage") &&
-			!hasPermission(user?.accessGroup.permissions || [], [
+			!hasPermission(userPermissions, [
 				"MANAGE_CONFERENCES",
-			])
+			]) &&
+			!isAdmin &&
+			!isSuperAdmin
 		) {
 			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
 		}
 
 		if (
 			req.nextUrl.pathname.startsWith("/panel/diplomatic") &&
-			!hasPermission(user?.accessGroup.permissions || [], [
+			!hasPermission(userPermissions, [
 				"ACCESS_CARD_MODULE",
 			])
 		) {

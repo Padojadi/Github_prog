@@ -9,11 +9,17 @@ export default async function HonorLoungeLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
+  const permissions = session?.user?.accessGroup?.permissions || [];
+  const isAdmin = session?.user?.role === "admin";
+  const isSuperAdmin = session?.user?.role === "super_admin";
 
   if (
-    !hasPermission(session?.user?.accessGroup?.permissions || [], [
+    !hasPermission(permissions, [
       "ACCESS_HONOR_LOUNGE_MODULE",
-    ])
+      "ACCESS_CONFERENCE_MODULE",
+    ]) &&
+    !isAdmin &&
+    !isSuperAdmin
   ) {
     redirect("/unauthorized");
   }

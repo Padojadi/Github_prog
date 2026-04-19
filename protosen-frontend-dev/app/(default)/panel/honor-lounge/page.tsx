@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQueryState } from "nuqs";
 import { useGetLounges } from "@/features/honor-lounge/hooks/use-get-lounges";
 import type { Lounge } from "@/features/honor-lounge/types";
+import useCurrentUser from "@/hooks/useCurrentUser";
+import { hasPermission } from "@/lib/utils";
 
 function currency(amount: number) {
   return new Intl.NumberFormat("fr-SN", {
@@ -30,8 +32,12 @@ function statusBadge(status: Lounge["status"]) {
 }
 
 export default function HonorLoungePage() {
+  const currentUser = useCurrentUser();
   const [search, setSearch] = useQueryState("search", { defaultValue: "" });
   const [page, setPage] = useQueryState("page", { defaultValue: "1" });
+  const [bookingStatus] = useQueryState("bookingStatus", {
+    defaultValue: "",
+  });
   const currentPage = Number(page) || 1;
   const { data, isLoading, isFetching } = useGetLounges(
     currentPage,
@@ -53,21 +59,43 @@ export default function HonorLoungePage() {
     return Math.max(1, data.data.totalPages);
   }, [data]);
 
+  const canManageLounges =
+    currentUser?.isAdmin ||
+    currentUser?.isSuperAdmin ||
+    hasPermission(currentUser?.accessGroup?.permissions || [], [
+      "MANAGE_CONFERENCES",
+    ]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Salon d'honneur</h1>
           <p className="text-sm text-muted-foreground">
-            Consultez et réservez les salons disponibles.
+            Consultez, créez et réservez les salons disponibles.
           </p>
+          {bookingStatus ? (
+            <p className="text-xs text-muted-foreground mt-1">
+              Filtre actif: statut réservation {bookingStatus}
+            </p>
+          ) : null}
         </div>
-        <Button asChild>
-          <Link href="/panel/honor-lounge/bookings/new">
-            <Clock3 className="h-4 w-4 mr-2" />
-            Nouvelle réservation
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {canManageLounges ? (
+            <Button asChild variant="outline">
+              <Link href="/panel/honor-lounge/manage">
+                <Building2 className="h-4 w-4 mr-2" />
+                Créer un salon
+              </Link>
+            </Button>
+          ) : null}
+          <Button asChild>
+            <Link href="/panel/honor-lounge/bookings/new">
+              <Clock3 className="h-4 w-4 mr-2" />
+              Nouvelle réservation
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="relative">

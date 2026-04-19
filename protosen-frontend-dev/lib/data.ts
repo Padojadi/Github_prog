@@ -136,24 +136,73 @@ const usersMenu: Ilink[] = [
 
 const honorLoungeMenu: Ilink[] = [
 	{
+		href: "/panel/honor-lounge/dashboard",
+		label: "Tableau de bord",
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+			"MANAGE_CONFERENCES",
+		],
+	},
+	{
 		href: "/panel/honor-lounge",
 		label: "Salons",
-		accessPermissions: ["ACCESS_HONOR_LOUNGE_MODULE"],
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+		],
+	},
+	{
+		href: "/panel/honor-lounge/manage",
+		label: "Ajouter un salon",
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+			"MANAGE_CONFERENCES",
+		],
 	},
 	{
 		href: "/panel/honor-lounge/bookings/new",
 		label: "Nouvelle réservation",
-		accessPermissions: ["ACCESS_HONOR_LOUNGE_MODULE"],
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+		],
 	},
 	{
 		href: "/panel/honor-lounge/bookings",
 		label: "Mes réservations",
-		accessPermissions: ["ACCESS_HONOR_LOUNGE_MODULE"],
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+		],
 	},
 	{
-		href: "/panel/honor-lounge/manage",
-		label: "Gestion des salons",
-		accessPermissions: ["ACCESS_HONOR_LOUNGE_MODULE", "MANAGE_CONFERENCES"],
+		href: "/panel/honor-lounge/bookings?bookingStatus=PENDING",
+		label: "Réservations en attente",
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+			"MANAGE_CONFERENCES",
+		],
+	},
+	{
+		href: "/panel/honor-lounge/bookings?bookingStatus=CONFIRMED",
+		label: "Réservations confirmées",
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+			"MANAGE_CONFERENCES",
+		],
+	},
+	{
+		href: "/panel/honor-lounge/bookings?bookingStatus=CANCELLED",
+		label: "Réservations annulées",
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+			"MANAGE_CONFERENCES",
+		],
 	},
 ];
 
@@ -198,7 +247,10 @@ export const links: Ilink[] = [
 		label: "Salon d'honneur",
 		icon: React.createElement(BsSliders, { size: 16 }),
 		children: [...honorLoungeMenu],
-		accessPermissions: ["ACCESS_HONOR_LOUNGE_MODULE"],
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+		],
 	},
 	{
 		href: "/panel/users",

@@ -53,6 +53,8 @@ const conferencesPermissionList = [
   "MANAGE_CONFERENCES",
 ];
 
+const HONOR_LOUNGE_PERMISSION = "ACCESS_HONOR_LOUNGE_MODULE";
+
 export function AccessRoleForm({ initialData, onClose }: AccessRoleFormProps) {
   const queryClient = useQueryClient();
 
@@ -161,7 +163,8 @@ export function AccessRoleForm({ initialData, onClose }: AccessRoleFormProps) {
                               ) {
                                 newValue = newValue.filter(
                                   (item) =>
-                                    !conferencesPermissionList.includes(item)
+                                    !conferencesPermissionList.includes(item) &&
+                                    item !== HONOR_LOUNGE_PERMISSION
                                 );
                               }
                               field.onChange(newValue);
@@ -178,6 +181,18 @@ export function AccessRoleForm({ initialData, onClose }: AccessRoleFormProps) {
                                   ...field.value,
                                   permission.value,
                                   "ACCESS_CONFERENCE_MODULE",
+                                  HONOR_LOUNGE_PERMISSION,
+                                ]);
+                                return;
+                              }
+                              if (
+                                permission.value === "ACCESS_CONFERENCE_MODULE" &&
+                                !field.value.includes(HONOR_LOUNGE_PERMISSION)
+                              ) {
+                                field.onChange([
+                                  ...field.value,
+                                  permission.value,
+                                  HONOR_LOUNGE_PERMISSION,
                                 ]);
                                 return;
                               }
