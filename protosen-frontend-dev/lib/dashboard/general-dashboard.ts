@@ -442,32 +442,13 @@ export const exportModuleCsv = async (moduleKey: DashboardModuleKey) => {
     const cards = await aggregateCards(token);
     const rows = [
       {
-        rubrique: "Nouvelles demandes",
-        valeur: cards.summary.newRequests,
-      },
-      {
-        rubrique: "Cartes imprimées",
-        valeur: cards.summary.printedCards,
-      },
-      {
-        rubrique: "Demandes de duplicata",
-        valeur: cards.summary.duplicateRequests,
-      },
-      {
-        rubrique: "Duplicatas imprimés",
-        valeur: cards.summary.duplicatePrinted,
-      },
-      {
-        rubrique: "Demandes de renouvellement",
-        valeur: cards.summary.renewRequests,
-      },
-      {
-        rubrique: "Renouvellements imprimés",
-        valeur: cards.summary.renewPrinted,
-      },
-      {
-        rubrique: "Total général",
-        valeur: cards.summary.total,
+        "Nouvelles demandes": cards.summary.newRequests,
+        "Cartes imprimées": cards.summary.printedCards,
+        "Demandes de duplicata": cards.summary.duplicateRequests,
+        "Duplicatas imprimés": cards.summary.duplicatePrinted,
+        "Demandes de renouvellement": cards.summary.renewRequests,
+        "Renouvellements imprimés": cards.summary.renewPrinted,
+        "Total général": cards.summary.total,
       },
     ];
 
