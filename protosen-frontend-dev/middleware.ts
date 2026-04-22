@@ -58,6 +58,17 @@ export default withAuth(
 		}
 
 		if (
+			req.nextUrl.pathname.startsWith("/panel/visas") &&
+			!hasPermission(userPermissions, [
+				"ACCESS_CONFERENCE_MODULE",
+			]) &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
 			req.nextUrl.pathname.startsWith("/panel/honor-lounge/manage") &&
 			!hasPermission(userPermissions, [
 				"MANAGE_CONFERENCES",

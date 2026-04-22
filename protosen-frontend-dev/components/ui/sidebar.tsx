@@ -191,7 +191,8 @@ export default function Sidebar() {
 										link.accessPermissions,
 									) &&
 										(link.href === "/panel/conferences" ||
-											link.href === "/panel/honor-lounge"))
+											link.href === "/panel/honor-lounge" ||
+											link.href === "/panel/visas"))
 								) {
 									return null;
 								}

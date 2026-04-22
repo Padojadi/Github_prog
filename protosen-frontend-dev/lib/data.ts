@@ -2,6 +2,7 @@ import React from "react";
 import type { IconBaseProps } from "react-icons";
 import {
 	BsCreditCard2Back,
+	BsCreditCard2Front,
 	BsGrid1X2,
 	BsPeople,
 	BsSliders,
@@ -100,6 +101,19 @@ const conferencesMenu: Ilink[] = [
 		href: `/panel/conferences/support-categories`,
 		label: "Catégories de prise en charge",
 		accessPermissions: ["ACCESS_CONFERENCE_MODULE", "MANAGE_CONFERENCES"],
+	},
+];
+
+const visaMenu: Ilink[] = [
+	{
+		href: "/panel/visas/dashboard",
+		label: "Tableau de bord",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/visas",
+		label: "Liste des visas",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
 ];
 
@@ -237,16 +251,6 @@ export const links: Ilink[] = [
 		children: [...diplomaticMenu],
 		accessPermissions: ["ACCESS_CARD_MODULE"],
 	},
-	// {
-	//   href: "/panel/visas",
-	//   label: "Visas",
-	//   icon: React.createElement(BsCreditCard2Front, { size: 16 }),
-	// },
-	// {
-	//   href: "/panel/exemptions",
-	//   label: "Exonérations",
-	//   icon: React.createElement(BsFolder2Open, { size: 16 }),
-	// },
 	{
 		href: "/panel/conferences",
 		label: "Conférences",
@@ -254,6 +258,11 @@ export const links: Ilink[] = [
 		children: [...conferencesMenu],
 		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
+	// {
+	//   href: "/panel/exemptions",
+	//   label: "Exonérations",
+	//   icon: React.createElement(BsFolder2Open, { size: 16 }),
+	// },
 	// {
 	//   href: "/panel/registrations",
 	//   label: "Immatriculations",
@@ -268,6 +277,13 @@ export const links: Ilink[] = [
 			"ACCESS_HONOR_LOUNGE_MODULE",
 			"ACCESS_CONFERENCE_MODULE",
 		],
+	},
+	{
+		href: "/panel/visas",
+		label: "Visa",
+		icon: React.createElement(BsCreditCard2Front, { size: 16 }),
+		children: [...visaMenu],
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
 	{
 		href: "/panel/users",
