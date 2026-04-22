@@ -1,0 +1,9 @@
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+apps/*/build
+apps/*/dist
+packages/*/dist
+.git
+.env*
+!.env.example

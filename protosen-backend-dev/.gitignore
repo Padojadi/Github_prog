@@ -1,0 +1,18 @@
+node_modules
+build
+dist
+.env*
+!.env.example
+.idea
+yarn-error.log
+uploads
+ecosystem.config.js
+
+# Test
+coverage/
+*.lcov
+.jest/
+
+# VitePress
+docs/.vitepress/cache
+docs/.vitepress/dist

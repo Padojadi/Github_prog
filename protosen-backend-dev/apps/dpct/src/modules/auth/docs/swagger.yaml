@@ -1,0 +1,176 @@
+tags:
+  - name: Authentication
+    description: Gestion de l'authentification et des utilisateurs
+
+paths:
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Connexion utilisateur
+      description: Authentifie un utilisateur et retourne les tokens d'accès
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: Password123!
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Identifiants invalides
+        '500':
+          description: Erreur serveur
+
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Créer un nouvel utilisateur (Admin uniquement)
+      description: Permet à un admin de créer un nouvel utilisateur
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+      responses:
+        '201':
+          description: Utilisateur créé avec succès
+        '400':
+          description: Données invalides
+        '403':
+          description: Non autorisé
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Rafraîchir le token d'accès
+      description: Génère un nouveau token d'accès à partir du refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token rafraîchi avec succès
+        '401':
+          description: Token invalide
+
+  /api/auth/confirmemail:
+    post:
+      tags:
+        - Authentication
+      summary: Confirmer l'email d'un utilisateur
+      description: Confirme l'adresse email avec le code de vérification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Email confirmé
+        '400':
+          description: Code invalide
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        role:
+          type: string
+          enum: [user, admin, super_admin]
+        status:
+          type: string
+          enum: [active, disabled]
+        confirmed:
+          type: boolean
+        organismId:
+          type: string
+        accessGroupId:
+          type: string
+
+    RegisterInput:
+      type: object
+      required:
+        - email
+        - password
+        - first_name
+        - last_name
+        - organismId
+        - accessGroupId
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        first_name:
+          type: string
+        last_name:
+          type: string
+        organismId:
+          type: string
+          format: uuid
+        accessGroupId:
+          type: string
+          format: uuid
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

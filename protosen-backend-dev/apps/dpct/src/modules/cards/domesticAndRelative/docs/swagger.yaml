@@ -1,0 +1,708 @@
+tags:
+  - name: Cards - Domestic & Relative
+    description: Gestion des cartes diplomatiques pour personnel domestique et famille
+
+paths:
+  /api/card/domestic-and-relative:
+    post:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Créer une nouvelle carte personnel domestique
+      description: Crée une nouvelle demande de carte pour personnel domestique ou famille
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDomesticAndRelativeCardInput'
+      responses:
+        '200':
+          description: Carte créée avec succès
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    get:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Obtenir toutes les cartes personnel domestique
+      description: Récupère la liste avec filtres
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste récupérée
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/card/domestic-and-relative/files:
+    post:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Attacher les fichiers initiaux
+      description: Upload initial (passport, attestation de dépendance, photo)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - domesticAndRelativeDiplomaticCardId
+                - passport
+                - ad
+                - photo
+              properties:
+                domesticAndRelativeDiplomaticCardId:
+                  type: string
+                  format: uuid
+                passport:
+                  type: string
+                  format: binary
+                ad:
+                  type: string
+                  format: binary
+                  description: Attestation de dépendance
+                photo:
+                  type: string
+                  format: binary
+                others:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Fichiers attachés
+        '405':
+          description: Fichiers déjà attachés
+
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Mettre à jour les fichiers
+      description: Met à jour les fichiers existants
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - domesticAndRelativeDiplomaticCardId
+              properties:
+                domesticAndRelativeDiplomaticCardId:
+                  type: string
+                  format: uuid
+                passport:
+                  type: string
+                  format: binary
+                ad:
+                  type: string
+                  format: binary
+                photo:
+                  type: string
+                  format: binary
+                others:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Fichiers mis à jour
+
+  /api/card/domestic-and-relative/files/other/delete/{id}:
+    patch:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Supprimer des fichiers additionnels
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fileKeys
+              properties:
+                fileKeys:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Fichiers supprimés
+
+  /api/card/domestic-and-relative/pointfocal/validate/{id}:
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Validation point focal
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte soumise
+
+  /api/card/domestic-and-relative/admin/validate/{id}:
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Validation admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Validation effectuée
+
+  /api/card/domestic-and-relative/superadmin/validate/{id}:
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Validation super admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                validUntil:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Validation effectuée
+
+  /api/card/domestic-and-relative/set-printed/{id}:
+    patch:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Marquer comme imprimée
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte imprimée
+
+  /api/card/domestic-and-relative/undo-print/{id}:
+    patch:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Annuler l'impression
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Impression annulée
+
+  /api/card/domestic-and-relative/set-returned/{id}:
+    patch:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Marquer une carte comme restituée
+      description: Change le statut d'une carte imprimée à RETURNED (Admin/SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte marquée comme restituée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: La carte doit être imprimée et non expirée
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Carte non trouvée
+
+  /api/card/domestic-and-relative/{id}:
+    get:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Obtenir une carte par ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte récupérée
+
+    patch:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Mettre à jour partiellement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDomesticAndRelativeCardInput'
+      responses:
+        '200':
+          description: Carte mise à jour
+
+    delete:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Supprimer une carte
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte supprimée
+
+  # Routes renouvellement
+  /api/card/domestic-and-relative/renew:
+    get:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Liste des renouvellements
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste récupérée
+
+  /api/card/domestic-and-relative/renew/create/{id}:
+    post:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Créer un renouvellement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renouvellement créé
+
+  /api/card/domestic-and-relative/renew/pointfocal/validate/{id}:
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Validation point focal (renouvellement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Soumis
+
+  /api/card/domestic-and-relative/renew/admin/validate/{id}:
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Validation admin (renouvellement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validé
+
+  /api/card/domestic-and-relative/renew/superadmin/validate/{id}:
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Validation super admin (renouvellement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validé
+
+  /api/card/domestic-and-relative/renew/set-printed/{id}:
+    patch:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Marquer renouvellement comme imprimé
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Marqué imprimé
+
+  /api/card/domestic-and-relative/renew/undo-print/{id}:
+    patch:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Annuler impression renouvellement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Annulé
+
+  /api/card/domestic-and-relative/renew/set-returned/{id}:
+    patch:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Marquer un renouvellement comme restitué
+      description: Change le statut d'un renouvellement imprimé à RETURNED (Admin/SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renouvellement marqué comme restitué
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: Le renouvellement doit être imprimé et non expiré
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Renouvellement non trouvé
+
+  /api/card/domestic-and-relative/renew/{id}:
+    get:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Obtenir un renouvellement par ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renouvellement récupéré
+
+  # Routes duplicata
+  /api/card/domestic-and-relative/duplicata:
+    post:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Demander un duplicata
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Duplicata créé
+
+    get:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Liste des duplicatas
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste récupérée
+
+  /api/card/domestic-and-relative/duplicata/{id}:
+    get:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Obtenir un duplicata par ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Duplicata récupéré
+
+  /api/card/domestic-and-relative/duplicata/pointfocal/validate/{id}:
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Validation point focal (duplicata)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Soumis
+
+  /api/card/domestic-and-relative/duplicata/admin/validate/{id}:
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Validation admin (duplicata)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validé
+
+  /api/card/domestic-and-relative/duplicata/superadmin/validate/{id}:
+    put:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Validation super admin (duplicata)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validé
+
+  /api/card/domestic-and-relative/duplicata/set-returned/{id}:
+    patch:
+      tags:
+        - Cards - Domestic & Relative
+      summary: Marquer un duplicata comme restitué
+      description: Change le statut d'un duplicata imprimé à RETURNED (Admin/SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Duplicata marqué comme restitué
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: Le duplicata doit être imprimé et la carte originale non expirée
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Duplicata non trouvé
+
+components:
+  schemas:
+    CreateDomesticAndRelativeCardInput:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - gender
+        - dateOfBirth
+        - ownerDiplomaticCardId
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        gender:
+          type: string
+          enum: [M, F]
+        dateOfBirth:
+          type: string
+          format: date-time
+        ownerDiplomaticCardId:
+          type: string
+          format: uuid
+
+    UpdateDomesticAndRelativeCardInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string

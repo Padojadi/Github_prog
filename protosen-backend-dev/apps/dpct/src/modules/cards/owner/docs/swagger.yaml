@@ -1,0 +1,1418 @@
+tags:
+  - name: Cards - Owner
+    description: Gestion des cartes diplomatiques pour titulaires
+
+paths:
+  /api/card/owner:
+    post:
+      tags:
+        - Cards - Owner
+      summary: Créer une nouvelle carte titulaire
+      description: Crée une nouvelle demande de carte diplomatique pour un titulaire
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOwnerCardInput'
+      responses:
+        '200':
+          description: Carte créée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  demandType:
+                    type: string
+                    example: NEW
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/OwnerCard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Erreur serveur
+
+    get:
+      tags:
+        - Cards - Owner
+      summary: Obtenir toutes les cartes titulaires (SuperAdmin)
+      description: Récupère la liste de toutes les cartes titulaires avec filtres
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, disabled]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sort
+          in: query
+          schema:
+            type: string
+        - name: documentStage
+          in: query
+          schema:
+            type: string
+        - name: organismId
+          in: query
+          schema:
+            type: string
+        - name: creatorId
+          in: query
+          schema:
+            type: string
+        - name: id
+          in: query
+          schema:
+            type: string
+        - name: expired
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Liste des cartes récupérée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      cards:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/OwnerCard'
+                      total:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/card/owner/admin/list:
+    get:
+      tags:
+        - Cards - Owner
+      summary: Obtenir les cartes titulaires (Admin)
+      description: Récupère les cartes selon les permissions de l'utilisateur
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: documentStage
+          in: query
+          schema:
+            type: string
+        - name: expired
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Liste des cartes récupérée
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/card/owner/upload-url:
+    post:
+      tags:
+        - Cards - Owner
+      summary: Générer une URL pré-signée pour upload S3
+      description: Génère une URL temporaire pour uploader des fichiers directement sur S3
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fileName
+                - fileType
+              properties:
+                fileName:
+                  type: string
+                  example: passport.pdf
+                fileType:
+                  type: string
+                  example: application/pdf
+      responses:
+        '200':
+          description: URL générée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/card/owner/files:
+    post:
+      tags:
+        - Cards - Owner
+      summary: Attacher les fichiers initiaux
+      description: Upload initial des fichiers requis (passport, LC, photo) pour une carte. Cette route doit être utilisée la première fois uniquement.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - ownerDiplomaticCardId
+                - passport
+                - lc
+                - photo
+              properties:
+                ownerDiplomaticCardId:
+                  type: string
+                  format: uuid
+                  description: ID de la carte diplomatique
+                passport:
+                  type: string
+                  format: binary
+                  description: Fichier du passeport (requis)
+                lc:
+                  type: string
+                  format: binary
+                  description: Fichier de la lettre de créance (requis)
+                photo:
+                  type: string
+                  format: binary
+                  description: Photo d'identité (requis)
+                others:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Fichiers additionnels (optionnel)
+      responses:
+        '200':
+          description: Fichiers attachés avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: Fichiers manquants ou invalides
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '405':
+          description: Les fichiers ont déjà été attachés
+
+    put:
+      tags:
+        - Cards - Owner
+      summary: Mettre à jour ou ajouter des fichiers
+      description: Met à jour les fichiers existants (passport, LC, photo) ou ajoute des fichiers additionnels à une carte qui a déjà des fichiers attachés
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - ownerDiplomaticCardId
+              properties:
+                ownerDiplomaticCardId:
+                  type: string
+                  format: uuid
+                  description: ID de la carte diplomatique
+                passport:
+                  type: string
+                  format: binary
+                  description: Nouveau fichier du passeport (optionnel)
+                lc:
+                  type: string
+                  format: binary
+                  description: Nouveau fichier de la lettre de créance (optionnel)
+                photo:
+                  type: string
+                  format: binary
+                  description: Nouvelle photo d'identité (optionnel)
+                others:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Fichiers additionnels à ajouter (optionnel)
+      responses:
+        '200':
+          description: Fichiers mis à jour avec succès
+        '400':
+          description: Requête invalide
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Carte ou fichiers non trouvés
+
+  /api/card/owner/files/other/delete/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Supprimer des fichiers additionnels
+      description: Supprime un ou plusieurs fichiers de la liste 'others'
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fileKeys
+              properties:
+                fileKeys:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Fichiers supprimés
+        '404':
+          description: Carte non trouvée
+
+  /api/card/owner/pointfocal/validate/{id}:
+    put:
+      tags:
+        - Cards - Owner
+      summary: Validation point focal
+      description: Soumettre une carte pour validation au niveau point focal
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte soumise pour validation
+        '400':
+          description: La carte ne peut pas être mise à jour
+        '404':
+          description: Carte non trouvée
+
+  /api/card/owner/admin/validate/{id}:
+    put:
+      tags:
+        - Cards - Owner
+      summary: Validation admin
+      description: Valider ou rejeter une carte au niveau admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                  enum: [PENDING, APPROVED, REJECTED, CONFIRMED, PRINTED]
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Validation effectuée
+        '400':
+          description: Validation impossible
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/card/owner/superadmin/validate/{id}:
+    put:
+      tags:
+        - Cards - Owner
+      summary: Validation super admin
+      description: Validation finale par le super admin avec génération du numéro de carte
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                  enum: [APPROVED, REJECTED, CONFIRMED]
+                validUntil:
+                  type: string
+                  format: date-time
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Validation super admin effectuée
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/card/owner/set-printed/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Marquer une carte comme imprimée
+      description: Change le statut d'une carte à PRINTED
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                printedDate:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Carte marquée comme imprimée
+
+  /api/card/owner/undo-print/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Annuler l'impression d'une carte
+      description: Retourne une carte imprimée au statut CONFIRMED (SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Impression annulée
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/card/owner/set-returned/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Marquer une carte comme restituée
+      description: Change le statut d'une carte imprimée à RETURNED (Admin/SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte marquée comme restituée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: La carte doit être imprimée et non expirée
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Carte non trouvée
+
+  /api/card/owner/{id}:
+    get:
+      tags:
+        - Cards - Owner
+      summary: Obtenir une carte par ID
+      description: Récupère les détails d'une carte titulaire avec ses fichiers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte récupérée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OwnerCard'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Mettre à jour partiellement une carte
+      description: Mise à jour partielle des informations de la carte
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOwnerCardInput'
+      responses:
+        '200':
+          description: Carte mise à jour
+        '400':
+          description: Mise à jour impossible
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Cards - Owner
+      summary: Mettre à jour complètement une carte
+      description: Mise à jour complète des informations (strict mode)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOwnerCardInput'
+      responses:
+        '200':
+          description: Carte mise à jour
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Cards - Owner
+      summary: Supprimer une carte
+      description: Supprime une carte et ses fichiers associés (SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte supprimée
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # Routes de renouvellement
+  /api/card/owner/renew:
+    get:
+      tags:
+        - Cards - Owner
+      summary: Obtenir les demandes de renouvellement
+      description: Liste toutes les demandes de renouvellement (SuperAdmin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des renouvellements
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/card/owner/renew/admin/list:
+    get:
+      tags:
+        - Cards - Owner
+      summary: Obtenir les renouvellements (Admin)
+      description: Liste les renouvellements selon les permissions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste des renouvellements
+
+  /api/card/owner/renew/create/{id}:
+    post:
+      tags:
+        - Cards - Owner
+      summary: Créer une demande de renouvellement
+      description: Crée une nouvelle demande de renouvellement pour une carte existante
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID de la carte originale à renouveler
+      responses:
+        '200':
+          description: Demande de renouvellement créée
+        '400':
+          description: Renouvellement impossible
+        '404':
+          description: Carte originale non trouvée
+
+  /api/card/owner/renew/pointfocal/validate/{id}:
+    put:
+      tags:
+        - Cards - Owner
+      summary: Validation point focal (renouvellement)
+      description: Soumettre un renouvellement pour validation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renouvellement soumis
+
+  /api/card/owner/renew/admin/validate/{id}:
+    put:
+      tags:
+        - Cards - Owner
+      summary: Validation admin (renouvellement)
+      description: Valider ou rejeter un renouvellement au niveau admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Validation effectuée
+
+  /api/card/owner/renew/superadmin/validate/{id}:
+    put:
+      tags:
+        - Cards - Owner
+      summary: Validation super admin (renouvellement)
+      description: Validation finale du renouvellement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                validUntil:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Renouvellement validé
+
+  /api/card/owner/renew/set-printed/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Marquer un renouvellement comme imprimé
+      description: Change le statut du renouvellement à PRINTED
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                printedDate:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Renouvellement marqué comme imprimé
+
+  /api/card/owner/renew/undo-print/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Annuler l'impression d'un renouvellement
+      description: Retourne un renouvellement au statut CONFIRMED
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Impression annulée
+
+  /api/card/owner/renew/set-returned/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Marquer un renouvellement comme restitué
+      description: Change le statut d'un renouvellement imprimé à RETURNED (Admin/SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renouvellement marqué comme restitué
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: Le renouvellement doit être imprimé et non expiré
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Renouvellement non trouvé
+
+  /api/card/owner/renew/{id}:
+    get:
+      tags:
+        - Cards - Owner
+      summary: Obtenir un renouvellement par ID
+      description: Récupère les détails d'une demande de renouvellement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renouvellement récupéré
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # Routes de duplicata
+  /api/card/owner/duplicata:
+    post:
+      tags:
+        - Cards - Owner
+      summary: Demander un duplicata
+      description: Crée une demande de duplicata pour une carte existante
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ownerDiplomaticCardId
+              properties:
+                ownerDiplomaticCardId:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Demande de duplicata créée
+        '400':
+          description: Duplicata impossible
+
+    get:
+      tags:
+        - Cards - Owner
+      summary: Obtenir les demandes de duplicata
+      description: Liste toutes les demandes de duplicata
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste des duplicatas
+
+  /api/card/owner/duplicata/{id}:
+    get:
+      tags:
+        - Cards - Owner
+      summary: Obtenir un duplicata par ID
+      description: Récupère les détails d'une demande de duplicata
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Duplicata récupéré
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/card/owner/duplicata/pointfocal/validate/{id}:
+    put:
+      tags:
+        - Cards - Owner
+      summary: Validation point focal (duplicata)
+      description: Soumettre un duplicata pour validation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Duplicata soumis
+
+  /api/card/owner/duplicata/admin/validate/{id}:
+    put:
+      tags:
+        - Cards - Owner
+      summary: Validation admin (duplicata)
+      description: Valider ou rejeter un duplicata au niveau admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Validation effectuée
+
+  /api/card/owner/duplicata/superadmin/validate/{id}:
+    put:
+      tags:
+        - Cards - Owner
+      summary: Validation super admin (duplicata)
+      description: Validation finale du duplicata
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                validUntil:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Duplicata validé
+
+  /api/card/owner/duplicata/set-printed/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Marquer un duplicata comme imprimé
+      description: Change le statut du duplicata à PRINTED avec les informations d'impression (issueDate, validUntil, type_card, color, plaque, observation)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - issueDate
+                - validUntil
+                - type_card
+                - color
+              properties:
+                issueDate:
+                  type: string
+                  format: date
+                  example: "2024-01-15"
+                  description: Date d'émission de la carte
+                validUntil:
+                  type: string
+                  format: date
+                  example: "2026-01-15"
+                  description: Date de validité de la carte
+                type_card:
+                  type: string
+                  example: "Carte Diplomatique"
+                  description: Type de carte
+                color:
+                  type: string
+                  example: "Bleu"
+                  description: Couleur de la carte
+                plaque:
+                  type: string
+                  maxLength: 4
+                  example: "CD01"
+                  description: Numéro de plaque (optionnel, max 4 caractères)
+                observation:
+                  type: string
+                  nullable: true
+                  example: "Remarque particulière"
+                  description: Observations additionnelles (optionnel)
+      responses:
+        '200':
+          description: Duplicata marqué comme imprimé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: La carte ne peut pas être imprimée (non confirmée ou expirée)
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Duplicata non trouvé
+
+  /api/card/owner/duplicata/undo-print/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Annuler l'impression d'un duplicata
+      description: Retourne un duplicata imprimé au statut CONFIRMED (SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Impression du duplicata annulée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: L'annulation n'est pas possible (carte non imprimée ou expirée)
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Duplicata non trouvé
+
+  /api/card/owner/duplicata/set-returned/{id}:
+    patch:
+      tags:
+        - Cards - Owner
+      summary: Marquer un duplicata comme restitué
+      description: Change le statut d'un duplicata imprimé à RETURNED (Admin/SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Duplicata marqué comme restitué
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: Le duplicata doit être imprimé et la carte originale non expirée
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Duplicata non trouvé
+
+components:
+  schemas:
+    CreateOwnerCardInput:
+      type: object
+      required:
+        - title
+        - firstName
+        - lastName
+        - matrimonialStatus
+        - gender
+        - dateOfBirth
+        - placeOfBirth
+        - citizenship
+        - countryOfBirth
+        - grade
+        - jobFunction
+        - travellingNumber
+        - deliverThe
+        - deliverBy
+        - deliverAt
+        - travellingTitleType
+        - dateTakingOffice
+        - travellingTitleValidUntil
+        - dateArrivalSenegal
+        - lastCityAbroad
+        - lastCountryAbroad
+        - latestOfWorkCountry
+        - latestWorkStructure
+        - lastestWorkDate
+        - lastStreetAbroad
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          example: M.
+        firstName:
+          type: string
+          maxLength: 200
+          example: Jean
+        lastName:
+          type: string
+          maxLength: 200
+          example: Dupont
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          example: jean.dupont@example.com
+        phone:
+          type: string
+          maxLength: 100
+          example: +221771234567
+        matrimonialStatus:
+          type: string
+          enum: [SINGLE, MARRIED, DIVORCED, WIDOWED]
+        gender:
+          type: string
+          enum: [M, F]
+        dateOfBirth:
+          type: string
+          format: date-time
+          example: "1980-01-15T00:00:00.000Z"
+        placeOfBirth:
+          type: string
+          maxLength: 200
+          example: Paris
+        citizenship:
+          type: string
+          maxLength: 200
+          example: Française
+        countryOfBirth:
+          type: string
+          maxLength: 200
+          example: France
+        adressSenegal:
+          type: string
+          maxLength: 200
+          example: Almadies, Dakar
+        grade:
+          type: string
+          maxLength: 200
+          example: Ambassadeur
+        personReplaced:
+          type: string
+          maxLength: 200
+        jobFunction:
+          type: string
+          maxLength: 200
+          example: Ambassadeur
+        travellingNumber:
+          type: string
+          maxLength: 200
+          example: 12AB34567
+        deliverAt:
+          type: string
+          maxLength: 200
+          example: Paris
+        deliverBy:
+          type: string
+          maxLength: 200
+          example: Préfecture de Paris
+        deliverThe:
+          type: string
+          format: date-time
+        issueDate:
+          type: string
+          format: date-time
+        travellingTitleType:
+          type: string
+          example: Passeport diplomatique
+        dateTakingOffice:
+          type: string
+          format: date-time
+        dateArrivalSenegal:
+          type: string
+          format: date-time
+        travellingTitleValidUntil:
+          type: string
+          format: date-time
+        dateEndOfMission:
+          type: string
+          format: date-time
+        lastCityAbroad:
+          type: string
+          maxLength: 200
+        lastCountryAbroad:
+          type: string
+          maxLength: 200
+        latestOfWorkCountry:
+          type: string
+          maxLength: 200
+        latestWorkStructure:
+          type: string
+          maxLength: 200
+        lastestWorkDate:
+          type: string
+          format: date-time
+        lastStreetAbroad:
+          type: string
+          maxLength: 200
+        plaque:
+          type: string
+          maxLength: 4
+          example: CD01
+
+    UpdateOwnerCardInput:
+      type: object
+      properties:
+        title:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        matrimonialStatus:
+          type: string
+        gender:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date-time
+        placeOfBirth:
+          type: string
+        citizenship:
+          type: string
+        countryOfBirth:
+          type: string
+        adressSenegal:
+          type: string
+        grade:
+          type: string
+        jobFunction:
+          type: string
+        plaque:
+          type: string
+
+    OwnerCard:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        cardNumber:
+          type: string
+        title:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        matrimonialStatus:
+          type: string
+        gender:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date-time
+        placeOfBirth:
+          type: string
+        citizenship:
+          type: string
+        documentStage:
+          type: string
+          enum: [DRAFT, PENDING, APPROVED, REJECTED, CONFIRMED, PRINTED]
+        status:
+          type: string
+          enum: [active, disabled]
+        expired:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        ownerDiplomaticCardFiles:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            passportKey:
+              type: string
+            lcKey:
+              type: string
+            photoKey:
+              type: string
+            otthersKey:
+              type: array
+              items:
+                type: string
