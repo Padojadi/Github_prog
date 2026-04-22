@@ -395,15 +395,44 @@ const getLoungeRows = async (token: string | null) => {
   };
 };
 
+const getVisaRows = async (token: string | null) => {
+  const params = new URLSearchParams();
+  params.set("limit", "10000");
+  params.set("page", "1");
+  const response = await fetchJson(`${BACKEND_URL_CONFERENCES}/visa?${params.toString()}`, token);
+  return getItemsFromPayload(response.data);
+};
+
+const getVisaKpiSummary = async (token: string | null) => {
+  const response = await fetchJson(`${BACKEND_URL_CONFERENCES}/visa/kpis/summary`, token);
+  if (response.ok && response.data && typeof response.data === "object") {
+    return response.data as {
+      total?: number;
+      submitted?: number;
+      autoVerified?: number;
+      validated?: number;
+      rejected?: number;
+      notified?: number;
+      issued?: number;
+      withdrawn?: number;
+      rejectionRate?: number;
+      deliveryRate?: number;
+      avgProcessingHours?: number;
+    };
+  }
+  return null;
+};
+
 export const getGeneralDashboardSummary = async (): Promise<GeneralDashboardSummary> => {
   const token = await getBearerToken();
 
-  const [cards, missionsByType, conferences, loungeRows, organisms, plates, cardTypes] =
+  const [cards, missionsByType, conferences, loungeRows, visaRows, organisms, plates, cardTypes] =
     await Promise.all([
       aggregateCards(token),
       aggregateMissions(token),
       getConferencesRows(token),
       getLoungeRows(token),
+      getVisaRows(token),
       fetchJson(`${Backend_URL}/institution?limit=10000&page=1`, token),
       fetchJson(`${Backend_URL}/plaque`, token),
       fetchJson(`${Backend_URL}/card-types`, token),
@@ -424,6 +453,7 @@ export const getGeneralDashboardSummary = async (): Promise<GeneralDashboardSumm
       ...DEFAULT_DASHBOARD_COUNTS,
       missions: missionsCount,
       cards: cards.summary.total,
+      visas: visaRows.length,
       conferences: conferences.length,
       lounge: loungeRows.bookings.length,
       immatriculations: getTotalFromPayload(plates.data),
@@ -618,16 +648,74 @@ export const exportModuleCsv = async (moduleKey: DashboardModuleKey) => {
     };
   }
 
+  if (moduleKey === "visas") {
+    const [rows, kpis] = await Promise.all([getVisaRows(token), getVisaKpiSummary(token)]);
+    const mapped = rows.map((item: any) => ({
+      id: item?.id || "",
+      dossierNumber: item?.dossierNumber || "",
+      visaNumber: item?.visaNumber || "",
+      prenom: item?.firstName || "",
+      nom: item?.lastName || "",
+      dateNaissance: item?.dateOfBirth || "",
+      nationalite: item?.nationality || "",
+      numeroPasseport: item?.passportNumber || "",
+      typeVisa: item?.visaType || "",
+      statutWorkflow: item?.currentStatus || "",
+      decisionValidation: item?.validationDecision || "",
+      scoreAutomatique: item?.automaticScore ?? "",
+      analyseDpi: item?.dpiAnalysis || "",
+      motifRejet: item?.rejectionReason || "",
+      dateNotification: item?.notificationSentAt || "",
+      dateEmission: item?.issuedAt || "",
+      dateRetrait: item?.withdrawalDate || item?.withdrawnAt || "",
+      collecteur: item?.collectorName || "",
+      pieceCollecteur: item?.collectorIdentityDocument || "",
+      creeLe: item?.createdAt || "",
+      modifieLe: item?.updatedAt || "",
+    }));
+
+    const kpiRow = kpis
+      ? [
+          {
+            id: "KPI",
+            dossierNumber: "",
+            visaNumber: "",
+            prenom: "",
+            nom: "",
+            dateNaissance: "",
+            nationalite: "",
+            numeroPasseport: "",
+            typeVisa: "RESUME_KPI",
+            statutWorkflow: "",
+            decisionValidation: "",
+            scoreAutomatique: "",
+            analyseDpi: `total=${kpis.total ?? 0}; soumises=${kpis.submitted ?? 0}; autoVerifiees=${kpis.autoVerified ?? 0}; validees=${kpis.validated ?? 0}; rejetees=${kpis.rejected ?? 0}; notifiees=${kpis.notified ?? 0}; emises=${kpis.issued ?? 0}; retirees=${kpis.withdrawn ?? 0}`,
+            motifRejet: `tauxRejet=${kpis.rejectionRate ?? 0}%`,
+            dateNotification: "",
+            dateEmission: `tauxDelivrance=${kpis.deliveryRate ?? 0}%`,
+            dateRetrait: `tempsTraitementMoyenHeures=${kpis.avgProcessingHours ?? 0}`,
+            collecteur: "",
+            pieceCollecteur: "",
+            creeLe: "",
+            modifieLe: "",
+          },
+        ]
+      : [];
+
+    return {
+      fileName: `dashboard-visas-${generatedAt}.csv`,
+      buffer: toCsvBuffer([...mapped, ...kpiRow]),
+    };
+  }
+
   // Placeholder modules expected by the business dashboard.
   const emptyTemplateByModule: Record<
-    Exclude<DashboardModuleKey, "cards" | "missions" | "conferences" | "lounge" | "immatriculations" | "others">,
+    Exclude<
+      DashboardModuleKey,
+      "cards" | "missions" | "conferences" | "lounge" | "immatriculations" | "others" | "visas"
+    >,
     { label: string; value: string }[]
   > = {
-    visas: [
-      { label: "rubrique", value: "rubrique" },
-      { label: "description", value: "description" },
-      { label: "valeur", value: "valeur" },
-    ],
     exonerations: [
       { label: "rubrique", value: "rubrique" },
       { label: "description", value: "description" },
@@ -637,8 +725,7 @@ export const exportModuleCsv = async (moduleKey: DashboardModuleKey) => {
 
   const placeholderRows = [
     {
-      rubrique:
-        moduleKey === "visas" ? "Demandes de visa" : "Demandes d'exonération",
+      rubrique: "Demandes d'exonération",
       description:
         "Source de données non disponible dans le backend actuel (structure d'export prête).",
       valeur: 0,
@@ -647,6 +734,6 @@ export const exportModuleCsv = async (moduleKey: DashboardModuleKey) => {
 
   return {
     fileName: `dashboard-${moduleKey}-${generatedAt}.csv`,
-    buffer: toCsvBuffer(placeholderRows, emptyTemplateByModule[moduleKey as "visas" | "exonerations"]),
+    buffer: toCsvBuffer(placeholderRows, emptyTemplateByModule[moduleKey as "exonerations"]),
   };
 };

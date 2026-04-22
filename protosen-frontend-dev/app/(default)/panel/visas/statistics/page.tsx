@@ -8,33 +8,44 @@ import {
   Smile,
   TrendingUp,
 } from "lucide-react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useGetVisaKpis } from "@/features/visa/hooks/use-visa";
 
 export default function VisaStatisticsPage() {
+  const { data } = useGetVisaKpis();
+
+  const kpis = useMemo(() => {
+    if (!data || "code" in data) {
+      return null;
+    }
+    return data.data;
+  }, [data]);
+
   const kpiCards = [
     {
       title: "Temps de traitement moyen",
-      value: "0 j",
+      value: `${kpis?.avgProcessingHours ?? 0} h`,
       icon: Clock3,
       description: "Durée moyenne entre soumission et décision",
     },
     {
       title: "Taux de rejet",
-      value: "0%",
+      value: `${kpis?.rejectionRate ?? 0}%`,
       icon: Percent,
       description: "Part des demandes rejetées",
     },
     {
       title: "Nombre de visas délivrés",
-      value: "0",
+      value: `${kpis?.issued ?? 0}`,
       icon: ScrollText,
       description: "Visas effectivement émis",
     },
     {
       title: "Satisfaction usagers",
-      value: "0/5",
+      value: `${kpis?.deliveryRate ?? 0}%`,
       icon: Smile,
-      description: "Indice de satisfaction global",
+      description: "Taux de délivrance des visas",
     },
   ];
 

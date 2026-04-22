@@ -18,6 +18,7 @@ import { InstitutionModule } from './modules/institution/institution.module';
 import { UserModule } from './modules/user/user.module';
 import { ReferentielsModule } from './modules/referentiels/referentiels.module';
 import { LoungeModule } from './modules/lounge/lounge.module';
+import { VisaModule } from './modules/visa/visa.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { LoungeModule } from './modules/lounge/lounge.module';
     UserModule,
     ReferentielsModule,
     LoungeModule,
+    VisaModule,
   ],
   controllers: [AppController],
   providers: [

@@ -14,7 +14,7 @@ export default function VisaRetraitFormMenuPage() {
           numero visa, nom collecteur, piece identite, signature, date retrait.
         </p>
         <Button asChild>
-          <Link href="/panel/visas/retrait">Ouvrir le formulaire de retrait</Link>
+          <Link href="/panel/visas/retrait">Ouvrir le formulaire</Link>
         </Button>
       </CardContent>
     </Card>

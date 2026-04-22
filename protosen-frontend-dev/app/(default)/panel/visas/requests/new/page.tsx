@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createVisaRequestClient } from "@/features/visa/lib/apis-client";
 
 type VisaRequestForm = {
   firstName: string;
@@ -27,16 +30,39 @@ const INITIAL_FORM: VisaRequestForm = {
 };
 
 export default function NewVisaRequestPage() {
+  const router = useRouter();
   const [form, setForm] = useState<VisaRequestForm>(INITIAL_FORM);
+  const [submitting, setSubmitting] = useState(false);
 
   const updateField = (key: keyof VisaRequestForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // TODO: brancher API backend visa lors de l'implémentation métier.
-    console.log("visa_request_payload", form);
+    setSubmitting(true);
+
+    const response = await createVisaRequestClient({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      dateOfBirth: new Date(form.birthDate).toISOString(),
+      nationality: form.nationality,
+      passportNumber: form.passportNumber,
+      visaType: form.visaType,
+      documents: form.documents,
+    });
+
+    setSubmitting(false);
+
+    if ("code" in response) {
+      toast.error(response.message || "Erreur lors de la soumission de la demande.");
+      return;
+    }
+
+    toast.success(`Demande créée avec succès (${response.data.dossierNumber}).`);
+    setForm(INITIAL_FORM);
+    router.push("/panel/visas/requests");
+    router.refresh();
   };
 
   return (
@@ -118,7 +144,9 @@ export default function NewVisaRequestPage() {
               />
             </div>
             <div className="md:col-span-2 flex justify-end">
-              <Button type="submit">Soumettre la demande</Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Soumission..." : "Soumettre la demande"}
+              </Button>
             </div>
           </form>
         </CardContent>

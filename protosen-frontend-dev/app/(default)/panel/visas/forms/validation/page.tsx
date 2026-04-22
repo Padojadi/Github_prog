@@ -16,6 +16,9 @@ export default function VisaValidationFormEntryPage() {
         <Button asChild>
           <Link href="/panel/visas/validation">Ouvrir le formulaire</Link>
         </Button>
+        <Button asChild variant="outline">
+          <Link href="/panel/visas/requests">Voir les dossiers à valider</Link>
+        </Button>
       </CardContent>
     </Card>
   );

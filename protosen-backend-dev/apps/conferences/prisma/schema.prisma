@@ -232,6 +232,21 @@ enum LoungePaymentStatus {
   FAILED
 }
 
+enum VisaWorkflowStatus {
+  SUBMITTED
+  AUTO_VERIFIED
+  VALIDATED
+  REJECTED
+  NOTIFIED
+  ISSUED
+  WITHDRAWN
+}
+
+enum VisaValidationDecision {
+  APPROVE
+  REJECT
+}
+
 model Lounge {
   id            String         @id @default(uuid())
   name          String
@@ -302,5 +317,57 @@ model LoungeBookingHistory {
   createdAt   DateTime            @default(now())
 
   @@index([bookingId])
+  @@index([createdAt])
+}
+
+model VisaRequest {
+  id                        String                  @id @default(uuid())
+  dossierNumber             String                  @unique
+  firstName                 String
+  lastName                  String
+  dateOfBirth               DateTime
+  nationality               String
+  passportNumber            String
+  visaType                  String
+  documents                 String
+  currentStatus             VisaWorkflowStatus      @default(SUBMITTED)
+  validationDecision        VisaValidationDecision?
+  automaticScore            Float?
+  dpiAnalysis               String?
+  rejectionReason           String?
+  visaNumber                String?                 @unique
+  notificationSentAt        DateTime?
+  issuedAt                  DateTime?
+  withdrawnAt               DateTime?
+  collectorName             String?
+  collectorIdentityDocument String?
+  collectorSignature        String?
+  withdrawalDate            DateTime?
+  createdBy                 String
+  validatedBy               String?
+  emittedBy                 String?
+  withdrawnBy               String?
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
+  histories                 VisaStatusHistory[]
+
+  @@index([currentStatus])
+  @@index([createdBy])
+  @@index([passportNumber])
+  @@index([visaNumber])
+}
+
+model VisaStatusHistory {
+  id          String             @id @default(uuid())
+  visaRequestId String
+  visaRequest  VisaRequest       @relation(fields: [visaRequestId], references: [id], onDelete: Cascade)
+  status      VisaWorkflowStatus
+  changedBy   String
+  notes       String?
+  metadata    Json?
+  createdAt   DateTime           @default(now())
+
+  @@index([visaRequestId])
+  @@index([status])
   @@index([createdAt])
 }

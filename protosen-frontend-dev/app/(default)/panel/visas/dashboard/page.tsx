@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Bell, CheckCircle2, FileCheck2, FileSearch, Plane, ShieldCheck, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useGetVisaKpis } from "@/features/visa/hooks/use-visa";
 
 const workflowSteps = [
   {
@@ -39,6 +40,17 @@ const workflowSteps = [
 ];
 
 export default function VisasDashboardPage() {
+  const { data: kpiResponse } = useGetVisaKpis();
+  const kpis =
+    kpiResponse && !("code" in kpiResponse)
+      ? kpiResponse.data
+      : {
+          submitted: 0,
+          issued: 0,
+          avgProcessingHours: 0,
+          rejectionRate: 0,
+        };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -60,25 +72,29 @@ export default function VisasDashboardPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Nouvelles demandes</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-bold">0</CardContent>
+          <CardContent className="text-2xl font-bold">{kpis.submitted}</CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Visas délivrés</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-bold">0</CardContent>
+          <CardContent className="text-2xl font-bold">{kpis.issued}</CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Temps de traitement (moy.)</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-bold">0 j</CardContent>
+          <CardContent className="text-2xl font-bold">
+            {Number((kpis.avgProcessingHours ?? 0).toFixed(2))} h
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Taux de rejet</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-bold">0%</CardContent>
+          <CardContent className="text-2xl font-bold">
+            {Number((kpis.rejectionRate ?? 0).toFixed(2))}%
+          </CardContent>
         </Card>
       </div>
 
