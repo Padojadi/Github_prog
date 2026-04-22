@@ -111,8 +111,40 @@ const visaMenu: Ilink[] = [
 		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
 	{
-		href: "/panel/visas",
-		label: "Liste des visas",
+		href: "/panel/visas/functionalities",
+		label: "Fonctionnalités clés",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/visas/workflow",
+		label: "Workflow",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/visas/forms",
+		label: "Formulaires",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+		children: [
+			{
+				href: "/panel/visas/forms/demande",
+				label: "Demande de visa",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/visas/forms/validation",
+				label: "Validation",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/visas/forms/retrait",
+				label: "Retrait",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+		],
+	},
+	{
+		href: "/panel/visas/kpi",
+		label: "Indicateurs KPI",
 		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
 ];
