@@ -9,10 +9,16 @@ export default withAuth(
 	// 'withAuth' augments your 'Request' with the user's token.
 
 	function middleware(req: NextRequestWithAuth) {
-		const isAdmin = req.nextauth.token?.user.role === "admin";
-		const isSuperAdmin = req.nextauth.token?.user.role === "super_admin";
+		const normalizedRole = String(req.nextauth.token?.user.role || "")
+			.trim()
+			.toLowerCase()
+			.replace(/\s+/g, "_")
+			.replace(/-/g, "_");
+		const isAdmin = normalizedRole === "admin";
+		const isSuperAdmin =
+			normalizedRole === "super_admin" || normalizedRole === "superadmin";
 		const user = req.nextauth.token?.user;
-		const userPermissions = user?.accessGroup.permissions || [];
+		const userPermissions = user?.accessGroup?.permissions || [];
 		if (req.nextauth.token?.error === "RefreshAccessTokenError") {
 			return NextResponse.redirect(new URL("/signin", req.nextUrl));
 		}
@@ -51,6 +57,17 @@ export default withAuth(
 				"ACCESS_HONOR_LOUNGE_MODULE",
 				"ACCESS_CONFERENCE_MODULE",
 			]) &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+		if (
+			(req.nextUrl.pathname.startsWith("/panel/visas") ||
+				req.nextUrl.pathname.startsWith("/panel/exonerations") ||
+				req.nextUrl.pathname.startsWith("/panel/exemptions") ||
+				req.nextUrl.pathname.startsWith("/panel/registrations")) &&
+			!hasPermission(userPermissions, ["ACCESS_CONFERENCE_MODULE"]) &&
 			!isAdmin &&
 			!isSuperAdmin
 		) {
@@ -116,6 +133,7 @@ export const config = {
 		"/panel/dashboard",
 		"/panel/users/:path*",
 		"/panel/visas/:path*",
+		"/panel/exonerations/:path*",
 		"/panel/exemptions/:path*",
 		"/panel/conferences/:path*",
 		"/panel/registrations/:path*",

@@ -103,6 +103,30 @@ const conferencesMenu: Ilink[] = [
 	},
 ];
 
+const visasMenu: Ilink[] = [
+	{
+		href: "/panel/visas",
+		label: "Tableau de bord",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+];
+
+const exonerationsMenu: Ilink[] = [
+	{
+		href: "/panel/exonerations",
+		label: "Tableau de bord",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+];
+
+const registrationsMenu: Ilink[] = [
+	{
+		href: "/panel/registrations",
+		label: "Tableau de bord",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+];
+
 const othersMenu: Ilink[] = [
 	{
 		href: `/panel/others/type-of-cards`,
@@ -237,16 +261,6 @@ export const links: Ilink[] = [
 		children: [...diplomaticMenu],
 		accessPermissions: ["ACCESS_CARD_MODULE"],
 	},
-	// {
-	//   href: "/panel/visas",
-	//   label: "Visas",
-	//   icon: React.createElement(BsCreditCard2Front, { size: 16 }),
-	// },
-	// {
-	//   href: "/panel/exemptions",
-	//   label: "Exonérations",
-	//   icon: React.createElement(BsFolder2Open, { size: 16 }),
-	// },
 	{
 		href: "/panel/conferences",
 		label: "Conférences",
@@ -254,11 +268,6 @@ export const links: Ilink[] = [
 		children: [...conferencesMenu],
 		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
-	// {
-	//   href: "/panel/registrations",
-	//   label: "Immatriculations",
-	//   icon: React.createElement(BsFillPersonVcardFill, { size: 16 }),
-	// },
 	{
 		href: "/panel/honor-lounge",
 		label: "Salon d'honneur",
@@ -268,6 +277,27 @@ export const links: Ilink[] = [
 			"ACCESS_HONOR_LOUNGE_MODULE",
 			"ACCESS_CONFERENCE_MODULE",
 		],
+	},
+	{
+		href: "/panel/visas",
+		label: "Visa",
+		icon: React.createElement(BsGrid1X2, { size: 16 }),
+		children: [...visasMenu],
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations",
+		label: "Exonérations",
+		icon: React.createElement(BsStickies, { size: 16 }),
+		children: [...exonerationsMenu],
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/registrations",
+		label: "Immatriculations",
+		icon: React.createElement(BsSliders, { size: 16 }),
+		children: [...registrationsMenu],
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
 	{
 		href: "/panel/users",

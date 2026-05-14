@@ -1,10 +1,21 @@
 import type { NextAuthOptions } from "next-auth";
 import type { JWT } from "next-auth/jwt";
+import { decode as decodeJwt, encode as encodeJwt } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { Backend_URL } from "@/lib/constants";
 
 const backendAuthBaseUrl =
 	process.env.BACKEND_URL_INTERNAL || Backend_URL || "";
+const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+const previousAuthSecrets = [
+	process.env.AUTH_SECRET_PREVIOUS,
+	process.env.NEXTAUTH_SECRET_PREVIOUS,
+]
+	.filter(Boolean)
+	.flatMap((value) => String(value).split(","))
+	.map((value) => value.trim())
+	.filter(Boolean);
+const authSecretsForDecode = [authSecret, ...previousAuthSecrets].filter(Boolean);
 
 async function refreshToken(token: JWT): Promise<JWT> {
 	try {
@@ -40,9 +51,30 @@ async function refreshToken(token: JWT): Promise<JWT> {
 }
 
 export const authOptions: NextAuthOptions = {
-	secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+	secret: authSecret || undefined,
 	session: {
 		strategy: "jwt",
+	},
+	jwt: {
+		async encode(params) {
+			if (!authSecret) return "";
+			return encodeJwt({
+				...params,
+				secret: authSecret,
+			});
+		},
+		async decode(params) {
+			for (const secret of authSecretsForDecode) {
+				const decoded = await decodeJwt({
+					...params,
+					secret,
+				});
+				if (decoded) {
+					return decoded;
+				}
+			}
+			return null;
+		},
 	},
 	pages: {
 		signIn: "/signin",

@@ -48,6 +48,21 @@ export default function Sidebar() {
 		"/panel/users",
 		"/panel/settings",
 	];
+	const userPermissions = currentUser.accessGroup?.permissions || [];
+	const conferenceLinkedModules = [
+		"/panel/conferences",
+		"/panel/honor-lounge",
+		"/panel/visas",
+		"/panel/exonerations",
+		"/panel/registrations",
+	];
+	const hasConferenceLinkedAccess =
+		currentUser.isAdmin ||
+		currentUser.isSuperAdmin ||
+		hasPermission(userPermissions, [
+			"ACCESS_CONFERENCE_MODULE",
+			"ACCESS_HONOR_LOUNGE_MODULE",
+		]);
 
 	// close on click outside
 	useEffect(() => {
@@ -185,21 +200,21 @@ export default function Sidebar() {
 									return null;
 								}
 								if (
-									(!conferencesEnabled && link.href === "/panel/conferences") ||
-									(!hasPermission(
-										currentUser.accessGroup?.permissions || [],
-										link.accessPermissions,
-									) &&
-										(link.href === "/panel/conferences" ||
-											link.href === "/panel/honor-lounge"))
+									!conferencesEnabled &&
+									link.href === "/panel/conferences" &&
+									!currentUser.isAdmin &&
+									!currentUser.isSuperAdmin
 								) {
 									return null;
 								}
 								if (
-									!hasPermission(
-										currentUser.accessGroup?.permissions || [],
-										link.accessPermissions,
-									) &&
+									conferenceLinkedModules.includes(link.href) &&
+									!hasConferenceLinkedAccess
+								) {
+									return null;
+								}
+								if (
+									!hasPermission(userPermissions, link.accessPermissions) &&
 									link.href === "/panel/diplomatic"
 								) {
 									return null;
