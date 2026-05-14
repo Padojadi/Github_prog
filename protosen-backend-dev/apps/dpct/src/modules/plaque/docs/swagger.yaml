@@ -1,0 +1,133 @@
+tags:
+  - name: Plaques
+    description: Gestion des plaques d'immatriculation diplomatiques
+
+paths:
+  /api/plaque:
+    get:
+      tags:
+        - Plaques
+      summary: Obtenir toutes les plaques
+      description: Liste toutes les plaques d'immatriculation
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste des plaques
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plaque'
+
+    post:
+      tags:
+        - Plaques
+      summary: Créer une plaque (Super Admin)
+      description: Crée une nouvelle plaque d'immatriculation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlaqueInput'
+      responses:
+        '201':
+          description: Plaque créée
+        '403':
+          description: Non autorisé
+
+  /api/plaque/{id}:
+    get:
+      tags:
+        - Plaques
+      summary: Obtenir une plaque par code
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plaque trouvée
+        '404':
+          description: Non trouvée
+
+    put:
+      tags:
+        - Plaques
+      summary: Mettre à jour une plaque (Super Admin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlaqueInput'
+      responses:
+        '200':
+          description: Plaque mise à jour
+        '403':
+          description: Non autorisé
+
+    delete:
+      tags:
+        - Plaques
+      summary: Supprimer une plaque (Super Admin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Plaque supprimée
+        '403':
+          description: Non autorisé
+
+components:
+  schemas:
+    Plaque:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 4
+        title:
+          type: string
+
+    CreatePlaqueInput:
+      type: object
+      required:
+        - code
+        - title
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 4
+        title:
+          type: string
+          minLength: 1
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

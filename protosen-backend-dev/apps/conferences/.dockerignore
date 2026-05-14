@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Build artifacts
+dist/
+generated/
+
+# Tests
+test/
+*.spec.ts
+*.test.ts
+coverage/
+
+# Documentation
+README.md
+docs/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Misc
+*.log
+*.md
+.eslintrc*
+.prettierrc*
+tsconfig.build.tsbuildinfo

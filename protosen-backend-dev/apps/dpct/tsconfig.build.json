@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "build"
+  },
+  "include": [
+    "src/**/*.ts",
+    "grpc/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "tests",
+    "scripts/convert-models-to-cli.ts",
+    "scripts/generate-migrations.ts",
+    "database/models-generated",
+    ".types"
+  ]
+}

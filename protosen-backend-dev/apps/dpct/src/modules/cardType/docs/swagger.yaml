@@ -1,0 +1,156 @@
+tags:
+  - name: Card Types
+    description: Gestion des types de cartes diplomatiques
+
+paths:
+  /api/card-types:
+    get:
+      tags:
+        - Card Types
+      summary: Obtenir tous les types de cartes
+      description: Liste tous les types de cartes disponibles
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste des types de cartes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardType'
+
+    post:
+      tags:
+        - Card Types
+      summary: Créer un type de carte (Super Admin)
+      description: Crée un nouveau type de carte
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCardTypeInput'
+      responses:
+        '201':
+          description: Type de carte créé
+        '403':
+          description: Non autorisé
+
+  /api/card-types/{id}:
+    get:
+      tags:
+        - Card Types
+      summary: Obtenir un type de carte par ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Type de carte trouvé
+        '404':
+          description: Non trouvé
+
+    put:
+      tags:
+        - Card Types
+      summary: Mettre à jour un type de carte (Super Admin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCardTypeInput'
+      responses:
+        '200':
+          description: Type de carte mis à jour
+        '403':
+          description: Non autorisé
+
+    delete:
+      tags:
+        - Card Types
+      summary: Supprimer un type de carte (Super Admin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Type de carte supprimé
+        '403':
+          description: Non autorisé
+
+components:
+  schemas:
+    CardType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        observation:
+          type: array
+          items:
+            type: string
+
+    CreateCardTypeInput:
+      type: object
+      required:
+        - name
+        - observation
+      properties:
+        name:
+          type: string
+          minLength: 1
+        observation:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+
+    UpdateCardTypeInput:
+      type: object
+      properties:
+        name:
+          type: string
+        observation:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

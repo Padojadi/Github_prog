@@ -1,0 +1,139 @@
+openapi: 3.0.0
+info:
+  title: Protosen DPCT API
+  version: 1.0.0
+  description: |
+    API de gestion des cartes diplomatiques pour le Protosen.
+
+    Cette API permet de gérer:
+    - Authentification et utilisateurs
+    - Cartes diplomatiques (6 types)
+    - Institutions
+    - Statistiques
+    - Types de cartes
+    - Plaques d'immatriculation
+    - Groupes d'accès et permissions
+
+  contact:
+    name: Protosen Support
+    email: support@protosen.sn
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:5002
+    description: Serveur de développement
+  - url: https://api.protosen.sn
+    description: Serveur de production
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT obtenu via /api/auth/login
+
+        Format: `Authorization: Bearer <token>`
+
+  responses:
+    UnauthorizedError:
+      description: Token manquant ou invalide
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Veuillez vous connectez."
+
+    ForbiddenError:
+      description: Permissions insuffisantes
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Accès refusé."
+
+    NotFoundError:
+      description: Ressource non trouvée
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Ressource non trouvée"
+
+    ValidationError:
+      description: Erreur de validation des données
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    path:
+                      type: string
+                    message:
+                      type: string
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: Gestion de l'authentification
+  - name: Users
+    description: Gestion des utilisateurs
+  - name: Institutions
+    description: Gestion des institutions/organisations
+  - name: Statistics
+    description: Statistiques des cartes diplomatiques
+  - name: Card Types
+    description: Gestion des types de cartes
+  - name: Plaques
+    description: Gestion des plaques d'immatriculation
+  - name: Access Groups
+    description: Gestion des groupes d'accès et permissions
+  - name: Cards - Owner
+    description: Cartes diplomatiques pour titulaires
+  - name: Cards - Spouse
+    description: Cartes diplomatiques pour conjoints
+  - name: Cards - Child
+    description: Cartes diplomatiques pour enfants
+  - name: Cards - Other Dependant
+    description: Cartes diplomatiques pour autres dépendants
+  - name: Cards - Domestic & Relative
+    description: Cartes diplomatiques pour personnel de service
+  - name: Cards - Other Staff
+    description: Cartes diplomatiques pour autres personnels
+
+# Les paths sont définis dans chaque module
+# Utilisez swagger-jsdoc pour combiner automatiquement
+
+x-modules:
+  - path: ./src/modules/auth/docs/swagger.yaml
+    description: Module d'authentification
+  - path: ./src/modules/user/docs/swagger.yaml
+    description: Module utilisateurs
+  - path: ./src/modules/institution/docs/swagger.yaml
+    description: Module institutions
+  - path: ./src/modules/statistics/docs/swagger.yaml
+    description: Module statistiques
+  - path: ./src/modules/cardType/docs/swagger.yaml
+    description: Module types de cartes
+  - path: ./src/modules/plaque/docs/swagger.yaml
+    description: Module plaques
+  - path: ./src/modules/accessgroup/docs/swagger.yaml
+    description: Module groupes d'accès
