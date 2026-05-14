@@ -15,7 +15,7 @@ export default async function Home() {
 	const conferencesEnabled = isConferenceEnabled();
 
 	if (!conferencesEnabled) {
-		redirect("/temp-home");
+		redirect("/signin");
 	}
 
 	const data = await getConferencesPublic(1, 10, "");

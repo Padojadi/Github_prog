@@ -1,13 +1,28 @@
 
+const browserDpctBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "/api";
+const browserConferencesBaseUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL_CONFERENCES || "/conferences-api/v1";
+
+const serverDpctBaseUrl =
+  process.env.BACKEND_URL_INTERNAL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "http://127.0.0.1:5002/api";
+
+const serverConferencesBaseUrl =
+  process.env.BACKEND_URL_CONFERENCES_INTERNAL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL_CONFERENCES ||
+  "http://127.0.0.1:5003/v1";
+
 /**
- * Server-side requests can use INTERNAL endpoints (private network / localhost),
- * while browser requests keep using NEXT_PUBLIC endpoints.
+ * Browser calls stay on public/reverse-proxy routes while server calls prefer
+ * internal/private URLs for better reliability.
  */
 export const Backend_URL =
-  process.env.BACKEND_URL_INTERNAL || process.env.NEXT_PUBLIC_BACKEND_URL;
+  typeof window === "undefined" ? serverDpctBaseUrl : browserDpctBaseUrl;
 export const BACKEND_URL_CONFERENCES =
-  process.env.BACKEND_URL_CONFERENCES_INTERNAL ||
-  process.env.NEXT_PUBLIC_BACKEND_URL_CONFERENCES;
+  typeof window === "undefined"
+    ? serverConferencesBaseUrl
+    : browserConferencesBaseUrl;
 
 
 export const JSON_DEMO_URL = "https://json-placeholder-xi.vercel.app";
