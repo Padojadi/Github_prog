@@ -40,7 +40,7 @@ async function refreshToken(token: JWT): Promise<JWT> {
 }
 
 export const authOptions: NextAuthOptions = {
-	secret: process.env.AUTH_SECRET,
+	secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
 	session: {
 		strategy: "jwt",
 	},
