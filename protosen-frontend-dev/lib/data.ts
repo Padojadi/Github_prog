@@ -150,16 +150,110 @@ const visasMenu: Ilink[] = [
 
 const exonerationsMenu: Ilink[] = [
 	{
-		href: "/panel/exonerations",
+		href: "/panel/exonerations/dashboard",
 		label: "Tableau de bord",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations/functionalities",
+		label: "Fonctionnalités clés",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations/workflow",
+		label: "Workflow",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations/forms",
+		label: "Formulaires",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+		children: [
+			{
+				href: "/panel/exonerations/forms/demande",
+				label: "Demande TE",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/exonerations/forms/verification-dpct",
+				label: "Vérification DPCT",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/exonerations/forms/validation-douane",
+				label: "Validation Douane",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/exonerations/forms/notification-rejet",
+				label: "Notification de rejet",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/exonerations/forms/emission",
+				label: "Émission TE",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+		],
+	},
+	{
+		href: "/panel/exonerations/kpi",
+		label: "Indicateurs KPI",
 		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
 ];
 
 const registrationsMenu: Ilink[] = [
 	{
-		href: "/panel/registrations",
+		href: "/panel/registrations/dashboard",
 		label: "Tableau de bord",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/registrations/functionalities",
+		label: "Fonctionnalités clés",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/registrations/workflow",
+		label: "Workflow",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/registrations/forms",
+		label: "Formulaires",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+		children: [
+			{
+				href: "/panel/registrations/forms/demande",
+				label: "Demande",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/registrations/forms/mutation",
+				label: "Mutation",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/registrations/forms/permis",
+				label: "Permis",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/registrations/forms/retrait",
+				label: "Retrait",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/registrations/forms/correction",
+				label: "Correction",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+		],
+	},
+	{
+		href: "/panel/registrations/kpi",
+		label: "Indicateurs KPI",
 		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
 ];
