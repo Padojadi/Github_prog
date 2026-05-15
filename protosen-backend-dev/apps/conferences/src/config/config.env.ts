@@ -5,6 +5,7 @@ import {
   IsEmail,
   validateSync,
   IsEnum,
+  IsOptional,
 } from 'class-validator';
 
 enum Environment {
@@ -54,6 +55,10 @@ export class EnvironmentVariables {
 
   @IsString()
   APP_URL: string;
+
+  @IsOptional()
+  @IsString()
+  CORS_ALLOWED_ORIGINS?: string;
 
   @IsString()
   JWT_SECRET: string;

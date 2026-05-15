@@ -32,13 +32,25 @@ const app = express();
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.disable('x-powered-by');
 
 app.use(deserializeUser);
-const allowedOrigins = [
-	'https://protosen.gouv.sn',
-	'https://protosendev.gouv.sn',
-	'http://localhost:3000',
-];
+const parseAllowedOrigins = (raw: string | undefined) =>
+	(raw || '')
+		.split(',')
+		.map((value) => value.trim())
+		.filter(Boolean);
+const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
+const allowedOrigins =
+	configuredOrigins.length > 0
+		? configuredOrigins
+		: [
+				'https://protosen.gouv.sn',
+				'https://protosendev.gouv.sn',
+				'https://protosen.2ticglobal.com',
+				'http://localhost:3000',
+				'http://127.0.0.1:3000',
+			];
 
 const corsOptions: cors.CorsOptions = {
 	origin: function (origin, callback) {

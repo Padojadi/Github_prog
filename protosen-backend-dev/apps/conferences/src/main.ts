@@ -11,6 +11,20 @@ import helmet from 'helmet';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as express from 'express';
 
+function parseAllowedOrigins(
+  rawOrigins?: string,
+  appUrl?: string,
+  isProduction = false,
+): string[] {
+  const configured = (rawOrigins || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const defaults = isProduction ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  const merged = [...configured, appUrl || '', ...defaults].filter(Boolean);
+  return [...new Set(merged)];
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
@@ -19,9 +33,26 @@ async function bootstrap() {
 
   const API_VERSION = process.env.API_VERSION;
   const configService = app.get(ConfigService);
+  const isProduction = configService.get('NODE_ENV') === 'production';
+  const allowedOrigins = parseAllowedOrigins(
+    configService.get<string>('CORS_ALLOWED_ORIGINS'),
+    configService.get<string>('APP_URL'),
+    isProduction,
+  );
 
+  app.disable('x-powered-by');
   app.enableCors({
-    origin: '*',
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   });
   app.setGlobalPrefix(API_VERSION);

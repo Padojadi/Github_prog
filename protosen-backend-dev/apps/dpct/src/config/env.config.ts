@@ -42,6 +42,9 @@ const envSchema = z.object({
 	GRPC_PORT: z.string().regex(/^\d+$/, 'GRPC_PORT must be a number').default('50051'),
 	GRPC_API_KEY: z.string().min(1, 'GRPC_API_KEY is required'),
 	GRPC_ENABLE_REFLECTION: z.enum(['true', 'false']).default('false'),
+
+	// Security / CORS
+	CORS_ALLOWED_ORIGINS: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
