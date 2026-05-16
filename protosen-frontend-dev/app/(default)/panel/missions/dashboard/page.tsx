@@ -1,6 +1,7 @@
 import { JSON_DEMO_URL } from "@/lib/constants";
 import Link from "next/link";
 import React from "react";
+import { DashboardReportActions } from "@/components/dashboard/report-export-actions";
 
 type Mission = {
   id: number;
@@ -11,28 +12,48 @@ type Mission = {
 };
 
 export default async function MissionsDashboard() {
-  const data: Mission[] = await fetch(JSON_DEMO_URL + "/missions")
+  const data = await fetch(JSON_DEMO_URL + "/missions", {
+    cache: "no-store",
+  })
     .then((response) => response.json())
-    .catch((error) => console.error(error));
+    .catch(() => []) as Mission[];
+
+  const safeData = Array.isArray(data) ? data : [];
+  const reportSections = [
+    {
+      title: "Synthese des missions",
+      headers: ["Rubrique", "Total"],
+      rows: safeData.map((item) => [item.name, item.number]),
+    },
+  ];
 
   return (
-    <div className="grid grid-cols-4 gap-4">
-      {data.map((item) => (
-        <div
-          key={item.id}
-          className={`flex flex-col text-white p-4 ${item.bgColor}`}
-        >
-          <span className="text-3xl font-bold">{item.number}</span>
-          <span className="text-xl">{item.name}</span>
-          <Link
-            className="mt-2 text-current hover:text-white flex items-center"
-            href={item.link}
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <DashboardReportActions
+          title="Tableau de bord Missions - Rapport"
+          fileName="tableau-de-bord-missions"
+          sections={reportSections}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {safeData.map((item) => (
+          <div
+            key={item.id}
+            className={`flex flex-col p-4 text-white ${item.bgColor}`}
           >
-            <InfoIcon className="text-current" />
-            <span className="ml-1">Plus de détails</span>
-          </Link>
-        </div>
-      ))}
+            <span className="text-3xl font-bold">{item.number}</span>
+            <span className="text-xl">{item.name}</span>
+            <Link
+              className="mt-2 flex items-center text-current hover:text-white"
+              href={item.link}
+            >
+              <InfoIcon className="text-current" />
+              <span className="ml-1">Plus de détails</span>
+            </Link>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

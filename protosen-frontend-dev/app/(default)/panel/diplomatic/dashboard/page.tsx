@@ -1,5 +1,3 @@
-import Link from "next/link";
-import React from "react";
 import SimpleTableComponent from "@/components/table/simpleTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -7,14 +5,15 @@ import {
 	fetchStatsCardsDuplicata,
 	fetchStatsCardsRenew,
 } from "@/lib/actions/diplomaticCards/holders";
+import { DashboardReportActions } from "@/components/dashboard/report-export-actions";
 
 export default async function DiplomaticDashboard() {
 	const res = await fetchStatsCards();
 	const resRenew = await fetchStatsCardsRenew();
 	const resDuplicata = await fetchStatsCardsDuplicata();
-	const data = res.data;
-	const dataRenew = resRenew.data;
-	const dataDuplicata = resDuplicata.data;
+	const data = Array.isArray(res?.data) ? res.data : [];
+	const dataRenew = Array.isArray(resRenew?.data) ? resRenew.data : [];
+	const dataDuplicata = Array.isArray(resDuplicata?.data) ? resDuplicata.data : [];
 
 	const headers = [
 		{ label: "Nom", code: "name" },
@@ -26,97 +25,62 @@ export default async function DiplomaticDashboard() {
 		{ label: "Total", code: "total" },
 	];
 
-	// console.log(dataRenew);
-
-	const statusData = [
-		{
-			name: "Titulaire",
-			pending: 0,
-			confirmed: 0,
-			rejected: 0,
-			onhold: 0,
-			total: 0,
-		},
-		{
-			name: "Conjoint",
-			pending: 0,
-			confirmed: 0,
-			rejected: 0,
-			onhold: 0,
-			total: 0,
-		},
-		{
-			name: "Enfants du Titulaire",
-			pending: 0,
-			confirmed: 0,
-			rejected: 0,
-			onhold: 0,
-			total: 0,
-		},
-		{
-			name: "Autres Dépendants",
-			pending: 0,
-			confirmed: 0,
-			rejected: 0,
-			onhold: 0,
-			total: 0,
-		},
-		{
-			name: "Personnel de service, domestiques et familles",
-			pending: 0,
-			confirmed: 0,
-			rejected: 0,
-			onhold: 0,
-			total: 0,
-		},
-		{
-			name: "Autres personnels",
-			pending: 0,
-			confirmed: 0,
-			rejected: 0,
-			onhold: 0,
-			total: 0,
-		},
-	];
+	const sumTotal = (rows: any[]) =>
+		rows.map((item) => Number(item?.total ?? 0)).reduce((a, b) => a + b, 0);
 
 	const statsData = [
 		{
 			title: "Nouvelles Demandes",
-			value:
-				data
-					?.map((item: any) => item?.total)
-					.reduce((a: any, b: any) => a + b, 0) ?? 0,
+			value: sumTotal(data),
 			color: "bg-blue-600",
 		},
 		{
 			title: "Renouvellement",
-			value:
-				dataRenew
-					?.map((item: any) => item?.total)
-					.reduce((a: any, b: any) => a + b, 0) ?? 0,
+			value: sumTotal(dataRenew),
 			color: "bg-green-600",
 		},
 		{
 			title: "Duplicatas",
-			value:
-				dataDuplicata
-					?.map((item: any) => item?.total)
-					.reduce((a: any, b: any) => a + b, 0) ?? 0,
+			value: sumTotal(dataDuplicata),
 			color: "bg-yellow-400",
 		},
 		{
 			title: "Cartes au total",
-			value:
-				data
-					?.map((item: any) => item?.total)
-					.reduce((a: any, b: any) => a + b, 0) +
-				dataRenew
-					?.map((item: any) => item?.total)
-					.reduce((a: any, b: any) => a + b, 0) +
-				dataDuplicata
-					?.map((item: any) => item?.total)
-					.reduce((a: any, b: any) => a + b, 0),
+			value: sumTotal(data) + sumTotal(dataRenew) + sumTotal(dataDuplicata),
 			color: "bg-orange-400",
+		},
+	];
+
+	const getRowValue = (row: Record<string, unknown>, code: string) => {
+		if (code === "onHold") {
+			return row.onHold ?? row.onhold ?? 0;
+		}
+		return row[code] ?? 0;
+	};
+
+	const toSectionRows = (rows: any[]) =>
+		rows.map((row) => headers.map((header) => getRowValue(row, header.code)));
+
+	const reportSections = [
+		{
+			title: "Synthese globale",
+			headers: ["Indicateur", "Valeur"],
+			rows: statsData.map((stat) => [stat.title, stat.value]),
+		},
+		{
+			title: "Statuts - Nouvelles demandes",
+			headers: headers.map((header) => header.label),
+			rows: toSectionRows(data),
+		},
+		{
+			title: "Statuts - Renouvellements",
+			headers: headers.map((header) => header.label),
+			rows: toSectionRows(dataRenew),
+		},
+		{
+			title: "Statuts - Duplicatas",
+			headers: headers.map((header) => header.label),
+			rows: toSectionRows(dataDuplicata),
 		},
 	];
 
@@ -139,6 +103,13 @@ export default async function DiplomaticDashboard() {
 
 	return (
 		<>
+			<div className="mb-4 flex justify-end">
+				<DashboardReportActions
+					title="Tableau de bord Cartes Diplomatiques - Rapport"
+					fileName="tableau-de-bord-cartes-diplomatiques"
+					sections={reportSections}
+				/>
+			</div>
 			<div className="grid grid-cols-4 gap-4">
 				{statsData.map((stat) => (
 					<CardStats key={stat.title} {...stat} />

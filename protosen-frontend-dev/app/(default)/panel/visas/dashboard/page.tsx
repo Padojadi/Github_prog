@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { visaKpiCards } from "@/features/visas/lib/tdr";
+import { DashboardReportActions } from "@/components/dashboard/report-export-actions";
 
 export default function VisaDashboardPage() {
+	const reportSections = [
+		{
+			title: "Indicateurs Visa",
+			headers: ["Indicateur", "Valeur"],
+			rows: visaKpiCards.map((card) => [card.label, card.value]),
+		},
+	];
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
@@ -13,12 +22,19 @@ export default function VisaDashboardPage() {
 						Suivi rapide des indicateurs du workflow Visa.
 					</p>
 				</div>
-				<Link
-					href="/panel/visas/forms/demande"
-					className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500"
-				>
-					Nouvelle demande
-				</Link>
+				<div className="flex items-center gap-2">
+					<DashboardReportActions
+						title="Tableau de bord Visa - Rapport"
+						fileName="tableau-de-bord-visa"
+						sections={reportSections}
+					/>
+					<Link
+						href="/panel/visas/forms/demande"
+						className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+					>
+						Nouvelle demande
+					</Link>
+				</div>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

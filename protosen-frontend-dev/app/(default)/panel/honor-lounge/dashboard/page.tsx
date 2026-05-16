@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useGetLounges, useGetLoungeBookings } from "@/features/honor-lounge/hooks/use-get-lounges";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { hasPermission } from "@/lib/utils";
+import { DashboardReportActions } from "@/components/dashboard/report-export-actions";
 
 export default function HonorLoungeDashboardPage() {
   const currentUser = useCurrentUser();
@@ -38,6 +39,23 @@ export default function HonorLoungeDashboardPage() {
     currentUser?.isSuperAdmin ||
     hasPermission(currentUser?.accessGroup?.permissions || [], ["MANAGE_CONFERENCES"]);
 
+  const reportSections = useMemo(
+    () => [
+      {
+        title: "Synthese Salon d'honneur",
+        headers: ["Indicateur", "Valeur"],
+        rows: [
+          ["Salons", stats.loungesTotal],
+          ["Reservations", stats.bookingsTotal],
+          ["En attente", stats.pending],
+          ["Confirmees", stats.confirmed],
+          ["Annulees", stats.cancelled],
+        ],
+      },
+    ],
+    [stats]
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -48,6 +66,11 @@ export default function HonorLoungeDashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <DashboardReportActions
+            title="Tableau de bord Salon d'honneur - Rapport"
+            fileName="tableau-de-bord-salon-honneur"
+            sections={reportSections}
+          />
           {canManageLounges ? (
             <Button variant="outline" asChild>
               <Link href="/panel/honor-lounge/manage">

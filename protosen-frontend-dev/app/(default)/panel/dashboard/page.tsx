@@ -9,6 +9,7 @@ import { getPlates } from "@/features/others/plates/lib/apis";
 import { visaKpiCards } from "@/features/visas/lib/tdr";
 import { exonerationKpiCards } from "@/features/exonerations/lib/tdr";
 import { registrationKpiCards } from "@/features/registrations/lib/tdr";
+import { DashboardReportActions } from "@/components/dashboard/report-export-actions";
 
 type DashboardCard = {
   label: string;
@@ -285,26 +286,43 @@ export default async function Dashboard() {
     },
   ];
 
+  const reportSections = [
+    {
+      title: "Synthese des rubriques",
+      headers: ["Rubrique", "Total"],
+      rows: cards.map((card) => [card.label, card.value]),
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {cards.map((card) => (
-        <div
-          key={card.label}
-          className={`flex flex-col rounded-md p-4 text-white ${card.cardClassName}`}
-        >
-          <span className="text-3xl font-bold">
-            {numberFormatter.format(card.value)}
-          </span>
-          <span className="text-xl">{card.label}</span>
-          <Link
-            className={`mt-2 flex items-center ${card.linkClassName}`}
-            href={card.href}
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <DashboardReportActions
+          title="Tableau de bord principal - Rapport"
+          fileName="tableau-de-bord-principal"
+          sections={reportSections}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => (
+          <div
+            key={card.label}
+            className={`flex flex-col rounded-md p-4 text-white ${card.cardClassName}`}
           >
-            <InfoIcon className="text-current" />
-            <span className="ml-1">Plus de détails</span>
-          </Link>
-        </div>
-      ))}
+            <span className="text-3xl font-bold">
+              {numberFormatter.format(card.value)}
+            </span>
+            <span className="text-xl">{card.label}</span>
+            <Link
+              className={`mt-2 flex items-center ${card.linkClassName}`}
+              href={card.href}
+            >
+              <InfoIcon className="text-current" />
+              <span className="ml-1">Plus de détails</span>
+            </Link>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

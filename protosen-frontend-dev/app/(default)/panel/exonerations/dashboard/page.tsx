@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { exonerationKpiCards } from "@/features/exonerations/lib/tdr";
+import { DashboardReportActions } from "@/components/dashboard/report-export-actions";
 
 export default function ExonerationsDashboardPage() {
+	const reportSections = [
+		{
+			title: "Indicateurs Exonerations",
+			headers: ["Indicateur", "Valeur"],
+			rows: exonerationKpiCards.map((card) => [card.label, card.value]),
+		},
+	];
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
@@ -13,12 +22,19 @@ export default function ExonerationsDashboardPage() {
 						Suivi des indicateurs du système de gestion des TE.
 					</p>
 				</div>
-				<Link
-					href="/panel/exonerations/forms/demande"
-					className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500"
-				>
-					Nouvelle demande TE
-				</Link>
+				<div className="flex items-center gap-2">
+					<DashboardReportActions
+						title="Tableau de bord Exonerations - Rapport"
+						fileName="tableau-de-bord-exonerations"
+						sections={reportSections}
+					/>
+					<Link
+						href="/panel/exonerations/forms/demande"
+						className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+					>
+						Nouvelle demande TE
+					</Link>
+				</div>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
