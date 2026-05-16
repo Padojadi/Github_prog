@@ -51,11 +51,19 @@ export default async function DiplomaticDashboard() {
 		},
 	];
 
-	const getRowValue = (row: Record<string, unknown>, code: string) => {
+	const getRowValue = (row: Record<string, unknown>, code: string): string | number => {
 		if (code === "onHold") {
-			return row.onHold ?? row.onhold ?? 0;
+			const holdValue = row.onHold ?? row.onhold ?? 0;
+			if (typeof holdValue === "number" || typeof holdValue === "string") {
+				return holdValue;
+			}
+			return String(holdValue ?? "");
 		}
-		return row[code] ?? 0;
+		const value = row[code];
+		if (typeof value === "number" || typeof value === "string") {
+			return value;
+		}
+		return String(value ?? "");
 	};
 
 	const toSectionRows = (rows: any[]) =>
