@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DashboardReportActions } from "@/components/dashboard/report-export-actions";
 import {
 	DIPLOMATIC_REPORT_HEADERS,
@@ -46,10 +47,31 @@ export default function DiplomaticReportView({
 	sectionTitle,
 	records,
 }: DiplomaticReportViewProps) {
-	const [dateFrom, setDateFrom] = useState("");
-	const [dateTo, setDateTo] = useState("");
-	const [institutionFilter, setInstitutionFilter] = useState("all");
-	const [statusFilter, setStatusFilter] = useState("all");
+	const router = useRouter();
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
+
+	const dateFrom = searchParams.get("dateFrom") ?? "";
+	const dateTo = searchParams.get("dateTo") ?? "";
+	const institutionFilter = searchParams.get("institution") ?? "all";
+	const statusFilter = searchParams.get("status") ?? "all";
+
+	const updateQueryParams = (updates: Record<string, string>) => {
+		const params = new URLSearchParams(searchParams.toString());
+
+		Object.entries(updates).forEach(([key, value]) => {
+			if (!value || value === "all") {
+				params.delete(key);
+			} else {
+				params.set(key, value);
+			}
+		});
+
+		const nextQuery = params.toString();
+		router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+			scroll: false,
+		});
+	};
 
 	const institutionOptions = useMemo(() => {
 		return Array.from(
@@ -114,10 +136,12 @@ export default function DiplomaticReportView({
 	);
 
 	const resetFilters = () => {
-		setDateFrom("");
-		setDateTo("");
-		setInstitutionFilter("all");
-		setStatusFilter("all");
+		updateQueryParams({
+			dateFrom: "",
+			dateTo: "",
+			institution: "",
+			status: "",
+		});
 	};
 
 	return (
@@ -146,7 +170,9 @@ export default function DiplomaticReportView({
 					<input
 						type="date"
 						value={dateFrom}
-						onChange={(event) => setDateFrom(event.target.value)}
+						onChange={(event) =>
+							updateQueryParams({ dateFrom: event.target.value })
+						}
 						className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
 					/>
 				</div>
@@ -157,7 +183,7 @@ export default function DiplomaticReportView({
 					<input
 						type="date"
 						value={dateTo}
-						onChange={(event) => setDateTo(event.target.value)}
+						onChange={(event) => updateQueryParams({ dateTo: event.target.value })}
 						className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
 					/>
 				</div>
@@ -167,7 +193,9 @@ export default function DiplomaticReportView({
 					</label>
 					<select
 						value={institutionFilter}
-						onChange={(event) => setInstitutionFilter(event.target.value)}
+						onChange={(event) =>
+							updateQueryParams({ institution: event.target.value })
+						}
 						className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
 					>
 						<option value="all">Toutes les institutions</option>
@@ -184,7 +212,7 @@ export default function DiplomaticReportView({
 					</label>
 					<select
 						value={statusFilter}
-						onChange={(event) => setStatusFilter(event.target.value)}
+						onChange={(event) => updateQueryParams({ status: event.target.value })}
 						className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
 					>
 						<option value="all">Tous les statuts</option>
