@@ -1,5 +1,6 @@
 import SimpleTableComponent from "@/components/table/simpleTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 import {
 	fetchStatsCards,
 	fetchStatsCardsDuplicata,
@@ -33,21 +34,25 @@ export default async function DiplomaticDashboard() {
 			title: "Nouvelles Demandes",
 			value: sumTotal(data),
 			color: "bg-blue-600",
+			href: "/panel/diplomatic/reports/new-requests",
 		},
 		{
 			title: "Renouvellement",
 			value: sumTotal(dataRenew),
 			color: "bg-green-600",
+			href: "/panel/diplomatic/reports/renewals",
 		},
 		{
 			title: "Duplicatas",
 			value: sumTotal(dataDuplicata),
 			color: "bg-yellow-400",
+			href: "/panel/diplomatic/reports/duplicates",
 		},
 		{
 			title: "Cartes au total",
 			value: sumTotal(data) + sumTotal(dataRenew) + sumTotal(dataDuplicata),
 			color: "bg-orange-400",
+			href: "/panel/diplomatic/reports/total",
 		},
 	];
 
@@ -96,16 +101,21 @@ export default async function DiplomaticDashboard() {
 		title,
 		value,
 		color,
+		href,
 	}: {
 		title: string;
 		value: number;
 		color: string;
+		href: string;
 	}) => {
 		return (
-			<div className={`flex flex-col text-white p-4 ${color}`}>
+			<Link
+				href={href}
+				className={`flex flex-col text-white p-4 transition hover:opacity-90 ${color}`}
+			>
 				<span className="text-3xl font-bold">{value}</span>
 				<span className="text-xl">{title}</span>
-			</div>
+			</Link>
 		);
 	};
 
