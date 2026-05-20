@@ -227,6 +227,41 @@ const exonerationsMenu: Ilink[] = [
 		],
 	},
 	{
+		href: "/panel/exonerations/forms/verification-dpct?status=PENDING",
+		label: "En attente",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations/forms/validation-douane?status=DPCT_VERIFIED",
+		label: "Vérifiée DPCT",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations/forms/validation-douane?status=CUSTOMS_VALIDATED",
+		label: "Validée Douane",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations/forms/emission?status=EMITTED",
+		label: "Émise",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations/forms/emission?status=TRANSFERRED",
+		label: "Transférée",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations/forms/notification-rejet?status=REJECTED",
+		label: "Rejetée",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/exonerations/forms/notification-rejet?status=RETURNED",
+		label: "Retournée",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
 		href: "/panel/exonerations/kpi",
 		label: "Indicateurs KPI",
 		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
@@ -280,6 +315,36 @@ const registrationsMenu: Ilink[] = [
 				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 			},
 		],
+	},
+	{
+		href: "/panel/registrations/forms/mutation?status=PENDING",
+		label: "En attente",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/registrations/forms/mutation?status=MUTATION_VALIDATED",
+		label: "Mutation validée",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/registrations/forms/permis?status=PERMIT_ISSUED",
+		label: "Permis émis",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/registrations/forms/retrait?status=WITHDRAWN",
+		label: "Retiré",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/registrations/forms/correction?status=CORRECTION_REQUIRED",
+		label: "Correction requise",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+	},
+	{
+		href: "/panel/registrations/forms/correction?status=REJECTED",
+		label: "Rejetée",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
 	},
 	{
 		href: "/panel/registrations/kpi",

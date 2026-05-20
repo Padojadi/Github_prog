@@ -1,14 +1,33 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
+import ExonerationWorkflowStatusBadge from "@/features/exonerations/components/workflow-status-badge";
+import {
+	getExonerationStatusLabel,
+	useExonerationWorkflow,
+} from "@/features/exonerations/hooks/use-exoneration-workflow";
+import type { ExonerationWorkflowStatus } from "@/features/exonerations/lib/workflow-types";
 
 export default function ExonerationRejectionNotificationFormPage() {
-	const [submitted, setSubmitted] = useState(false);
+	const searchParams = useSearchParams();
+	const { records, isLoading, error } = useExonerationWorkflow();
+	const statusFilter = searchParams.get("status") as ExonerationWorkflowStatus | null;
 
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		setSubmitted(true);
-	};
+	const rejectedRows = useMemo(
+		() => records.filter((row) => row.status === "REJECTED"),
+		[records]
+	);
+	const returnedRows = useMemo(
+		() => records.filter((row) => row.status === "RETURNED"),
+		[records]
+	);
+	const filteredRows = useMemo(() => {
+		if (statusFilter === "REJECTED") return rejectedRows;
+		if (statusFilter === "RETURNED") return returnedRows;
+		return [...rejectedRows, ...returnedRows];
+	}, [rejectedRows, returnedRows, statusFilter]);
 
 	return (
 		<div className="space-y-6">
@@ -17,46 +36,53 @@ export default function ExonerationRejectionNotificationFormPage() {
 					Formulaire - Notification de rejet
 				</h1>
 				<p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-					Notification officielle de rejet (SMS / Email) avec motif.
+					Notification officielle des demandes rejetées ou retournées avec motif.
 				</p>
 			</div>
 
-			<form
-				onSubmit={handleSubmit}
-				className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800"
-			>
-				<div className="grid gap-4 md:grid-cols-2">
-					<label className="text-sm">
-						<span className="mb-1 block text-slate-700 dark:text-slate-300">Numéro dossier</span>
-						<input required className="form-input w-full" name="dossierNumber" />
-					</label>
-					<label className="text-sm">
-						<span className="mb-1 block text-slate-700 dark:text-slate-300">Canal de notification</span>
-						<select className="form-input w-full" name="notificationChannel">
-							<option value="EMAIL">Email</option>
-							<option value="SMS">SMS</option>
-							<option value="BOTH">SMS + Email</option>
-						</select>
-					</label>
-					<label className="text-sm md:col-span-2">
-						<span className="mb-1 block text-slate-700 dark:text-slate-300">Motif de rejet</span>
-						<textarea required className="form-input w-full min-h-24" name="rejectionReason" />
-					</label>
-				</div>
-				<div className="mt-4 flex justify-end">
-					<button
-						type="submit"
-						className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+			{statusFilter && (
+				<p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+					Filtre actif: <strong>{getExonerationStatusLabel(statusFilter)}</strong>.{" "}
+					<Link
+						href="/panel/exonerations/forms/notification-rejet"
+						className="underline"
 					>
-						Envoyer la notification
-					</button>
-				</div>
-				{submitted && (
-					<p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
-						Notification de rejet simulée avec succès.
-					</p>
+						Afficher toutes les rubriques
+					</Link>
+				</p>
+			)}
+
+			<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+				<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+					Dossiers à notifier
+				</h2>
+				{isLoading ? (
+					<p className="text-sm text-slate-500">Chargement...</p>
+				) : error ? (
+					<p className="text-sm text-red-600">{error}</p>
+				) : filteredRows.length === 0 ? (
+					<p className="text-sm text-slate-500">Aucun dossier à notifier.</p>
+				) : (
+					<div className="space-y-2">
+						{filteredRows.map((row) => (
+							<div
+								key={row.id}
+								className="rounded-md border border-slate-200 p-3 text-sm dark:border-slate-700"
+							>
+								<div className="flex items-center justify-between">
+									<p className="font-medium">
+										{row.reference} - Dossier {row.dossierNumber}
+									</p>
+									<ExonerationWorkflowStatusBadge status={row.status} />
+								</div>
+								<p className="text-xs text-slate-500">
+									Motif à notifier: {row.statusReason || "-"}
+								</p>
+							</div>
+						))}
+					</div>
 				)}
-			</form>
+			</section>
 		</div>
 	);
 }

@@ -1,13 +1,25 @@
+"use client";
+
 import Link from "next/link";
-import { registrationKpiCards } from "@/features/registrations/lib/tdr";
 import { DashboardReportActions } from "@/components/dashboard/report-export-actions";
+import { useRegistrationWorkflow } from "@/features/registrations/hooks/use-registration-workflow";
 
 export default function RegistrationsDashboardPage() {
+	const { stats, isLoading } = useRegistrationWorkflow();
+	const cards = [
+		{ label: "En attente", value: stats.PENDING },
+		{ label: "Mutation validée", value: stats.MUTATION_VALIDATED },
+		{ label: "Permis émis", value: stats.PERMIT_ISSUED },
+		{ label: "Retiré", value: stats.WITHDRAWN },
+		{ label: "Correction requise", value: stats.CORRECTION_REQUIRED },
+		{ label: "Rejetée", value: stats.REJECTED },
+	];
+
 	const reportSections = [
 		{
 			title: "Indicateurs Immatriculations",
 			headers: ["Indicateur", "Valeur"],
-			rows: registrationKpiCards.map((card) => [card.label, card.value]),
+			rows: cards.map((card) => [card.label, card.value]),
 		},
 	];
 
@@ -38,7 +50,7 @@ export default function RegistrationsDashboardPage() {
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-				{registrationKpiCards.map((card) => (
+				{cards.map((card) => (
 					<div
 						key={card.label}
 						className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"
@@ -47,7 +59,7 @@ export default function RegistrationsDashboardPage() {
 							{card.label}
 						</p>
 						<p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
-							{card.value}
+							{isLoading ? "-" : card.value}
 						</p>
 					</div>
 				))}

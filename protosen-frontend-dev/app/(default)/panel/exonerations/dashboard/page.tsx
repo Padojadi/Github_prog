@@ -1,13 +1,26 @@
+"use client";
+
 import Link from "next/link";
-import { exonerationKpiCards } from "@/features/exonerations/lib/tdr";
 import { DashboardReportActions } from "@/components/dashboard/report-export-actions";
+import { useExonerationWorkflow } from "@/features/exonerations/hooks/use-exoneration-workflow";
 
 export default function ExonerationsDashboardPage() {
+	const { stats, isLoading } = useExonerationWorkflow();
+	const cards = [
+		{ label: "En attente", value: stats.PENDING },
+		{ label: "Vérifiées DPCT", value: stats.DPCT_VERIFIED },
+		{ label: "Validées Douane", value: stats.CUSTOMS_VALIDATED },
+		{ label: "Émises", value: stats.EMITTED },
+		{ label: "Transférées", value: stats.TRANSFERRED },
+		{ label: "Rejetées", value: stats.REJECTED },
+		{ label: "Retournées", value: stats.RETURNED },
+	];
+
 	const reportSections = [
 		{
 			title: "Indicateurs Exonerations",
 			headers: ["Indicateur", "Valeur"],
-			rows: exonerationKpiCards.map((card) => [card.label, card.value]),
+			rows: cards.map((card) => [card.label, card.value]),
 		},
 	];
 
@@ -38,7 +51,7 @@ export default function ExonerationsDashboardPage() {
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-				{exonerationKpiCards.map((card) => (
+				{cards.map((card) => (
 					<div
 						key={card.label}
 						className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"
@@ -47,7 +60,7 @@ export default function ExonerationsDashboardPage() {
 							{card.label}
 						</p>
 						<p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
-							{card.value}
+							{isLoading ? "-" : card.value}
 						</p>
 					</div>
 				))}
