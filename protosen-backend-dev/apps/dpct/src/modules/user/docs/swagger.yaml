@@ -1,0 +1,297 @@
+tags:
+  - name: Users
+    description: Gestion des utilisateurs
+
+paths:
+  /api/user:
+    get:
+      tags:
+        - Users
+      summary: Obtenir l'utilisateur connecté
+      description: Récupère les informations de l'utilisateur authentifié
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Utilisateur trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Non authentifié
+        '404':
+          description: Utilisateur non trouvé
+
+    patch:
+      tags:
+        - Users
+      summary: Mettre à jour l'utilisateur connecté
+      description: Met à jour les informations de l'utilisateur authentifié
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserInput'
+      responses:
+        '200':
+          description: Utilisateur mis à jour
+        '400':
+          description: Données invalides
+
+  /api/user/all:
+    get:
+      tags:
+        - Users
+      summary: Obtenir tous les utilisateurs (Super Admin)
+      description: Liste tous les utilisateurs du système
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste des utilisateurs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '403':
+          description: Non autorisé
+
+  /api/user/{id}:
+    get:
+      tags:
+        - Users
+      summary: Obtenir un utilisateur par ID (Admin)
+      description: Récupère les informations d'un utilisateur spécifique
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Utilisateur trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Utilisateur non trouvé
+
+  /api/user/update_password:
+    put:
+      tags:
+        - Users
+      summary: Modifier le mot de passe
+      description: Permet à l'utilisateur de changer son mot de passe
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Mot de passe modifié
+        '400':
+          description: Ancien mot de passe incorrect
+
+  /api/user/send_code:
+    post:
+      tags:
+        - Users
+      summary: Envoyer un code de vérification
+      description: Envoie un code de vérification par email pour réinitialiser le mot de passe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Code envoyé
+        '404':
+          description: Email non trouvé
+
+  /api/user/reset_password:
+    post:
+      tags:
+        - Users
+      summary: Réinitialiser le mot de passe
+      description: Réinitialise le mot de passe avec le code de vérification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - code
+                - newPassword
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Mot de passe réinitialisé
+        '400':
+          description: Code invalide
+
+  /api/user/super_admin/update/{id}:
+    put:
+      tags:
+        - Users
+      summary: Mettre à jour un utilisateur (Super Admin)
+      description: Permet au super admin de modifier un utilisateur
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuperAdminUpdateUserInput'
+      responses:
+        '200':
+          description: Utilisateur mis à jour
+        '403':
+          description: Non autorisé
+
+  /api/user/super_admin/delete/{id}:
+    delete:
+      tags:
+        - Users
+      summary: Supprimer un utilisateur (Super Admin)
+      description: Permet au super admin de supprimer un utilisateur
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Utilisateur supprimé
+        '403':
+          description: Non autorisé
+        '404':
+          description: Utilisateur non trouvé
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [user, admin, super_admin]
+        status:
+          type: string
+          enum: [active, disabled]
+        confirmed:
+          type: boolean
+        organismId:
+          type: string
+          format: uuid
+        accessGroupId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateUserInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    SuperAdminUpdateUserInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        organismId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [user, admin]
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

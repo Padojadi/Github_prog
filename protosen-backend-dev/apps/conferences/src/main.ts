@@ -1,0 +1,110 @@
+import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
+import { AppModule } from './app.module';
+import {
+  DocumentBuilder,
+  SwaggerDocumentOptions,
+  SwaggerModule,
+} from '@nestjs/swagger';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import * as express from 'express';
+
+function parseAllowedOrigins(
+  rawOrigins?: string,
+  appUrl?: string,
+  isProduction = false,
+): string[] {
+  const configured = (rawOrigins || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const defaults = isProduction ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  const merged = [...configured, appUrl || '', ...defaults].filter(Boolean);
+  return [...new Set(merged)];
+}
+
+async function bootstrap() {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+    cors: true,
+  });
+
+  const API_VERSION = process.env.API_VERSION;
+  const configService = app.get(ConfigService);
+  const isProduction = configService.get('NODE_ENV') === 'production';
+  const allowedOrigins = parseAllowedOrigins(
+    configService.get<string>('CORS_ALLOWED_ORIGINS'),
+    configService.get<string>('APP_URL'),
+    isProduction,
+  );
+
+  app.disable('x-powered-by');
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  });
+  app.setGlobalPrefix(API_VERSION);
+  app.use(express.urlencoded({ extended: true }));
+  app.use(
+    helmet({
+      crossOriginEmbedderPolicy: false,
+      contentSecurityPolicy: {
+        directives: {
+          imgSrc: [
+            `'self'`,
+            'data:',
+            'apollo-server-landing-page.cdn.apollographql.com',
+          ],
+          scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
+          manifestSrc: [
+            `'self'`,
+            'apollo-server-landing-page.cdn.apollographql.com',
+          ],
+          frameSrc: [`'self'`, 'sandbox.embed.apollographql.com'],
+        },
+      },
+    }),
+  );
+
+  const config = new DocumentBuilder()
+    .setTitle('Protosen Conférences API')
+    .setVersion('1.0')
+    .addServer('http://localhost:5003', 'Local') // Environnement local
+    .addServer('https://protosendev.gouv.sn/conferences-api', 'Development') // Environnement de test
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
+    .build();
+  const options: SwaggerDocumentOptions = {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+  };
+  const document = SwaggerModule.createDocument(app, config, options);
+  if (configService.get('NODE_ENV') === 'development') {
+    SwaggerModule.setup(`${API_VERSION}/doc-api`, app, document);
+  }
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // strip out properties not expected by the DTO
+      transform: true, // auto transform payload to dto instance
+      // forbidNonWhitelisted: true, // throws an error if non-whitelisted values are provided
+      //exceptionFactory: (errors) => new BadRequestException(errors),
+    }),
+  );
+  const port = process.env.PORT;
+  await app.listen(port, async () => {
+    Logger.log(`Application is running on: ${await app.getUrl()}`);
+    Logger.log(`Running in ${configService.get('NODE_ENV')} mode`);
+  });
+}
+bootstrap();

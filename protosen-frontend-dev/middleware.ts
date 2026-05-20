@@ -1,0 +1,146 @@
+// export { default } from "next-auth/middleware";
+// https://next-auth.js.org/configuration/nextjs#advanced-usage
+
+import { NextResponse } from "next/server";
+import { type NextRequestWithAuth, withAuth } from "next-auth/middleware";
+import { hasPermission } from "./lib/utils";
+
+export default withAuth(
+	// 'withAuth' augments your 'Request' with the user's token.
+
+	function middleware(req: NextRequestWithAuth) {
+		const normalizedRole = String(req.nextauth.token?.user.role || "")
+			.trim()
+			.toLowerCase()
+			.replace(/\s+/g, "_")
+			.replace(/-/g, "_");
+		const isAdmin = normalizedRole === "admin";
+		const isSuperAdmin =
+			normalizedRole === "super_admin" || normalizedRole === "superadmin";
+		const user = req.nextauth.token?.user;
+		const userPermissions = user?.accessGroup?.permissions || [];
+		if (req.nextauth.token?.error === "RefreshAccessTokenError") {
+			return NextResponse.redirect(new URL("/signin", req.nextUrl));
+		}
+		if (req.nextUrl.pathname.startsWith("/panel/users") && !isSuperAdmin) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
+			req.nextUrl.pathname.endsWith("/validate") &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
+			req.nextUrl.pathname.includes("/panel/dashboard") &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
+			req.nextUrl.pathname.startsWith("/panel/conferences") &&
+			!hasPermission(userPermissions, [
+				"ACCESS_CONFERENCE_MODULE",
+			])
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
+			req.nextUrl.pathname.startsWith("/panel/honor-lounge") &&
+			!hasPermission(userPermissions, [
+				"ACCESS_HONOR_LOUNGE_MODULE",
+				"ACCESS_CONFERENCE_MODULE",
+			]) &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+		if (
+			(req.nextUrl.pathname.startsWith("/panel/visas") ||
+				req.nextUrl.pathname.startsWith("/panel/exonerations") ||
+				req.nextUrl.pathname.startsWith("/panel/exemptions") ||
+				req.nextUrl.pathname.startsWith("/panel/registrations")) &&
+			!hasPermission(userPermissions, ["ACCESS_CONFERENCE_MODULE"]) &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
+			req.nextUrl.pathname.startsWith("/panel/honor-lounge/manage") &&
+			!hasPermission(userPermissions, [
+				"MANAGE_CONFERENCES",
+			]) &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
+			req.nextUrl.pathname.startsWith("/panel/honor-lounge/booking-history") &&
+			!hasPermission(userPermissions, [
+				"MANAGE_CONFERENCES",
+			]) &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
+			req.nextUrl.pathname.startsWith("/panel/diplomatic") &&
+			!hasPermission(userPermissions, [
+				"ACCESS_CARD_MODULE",
+			])
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (
+			req.nextUrl.pathname.startsWith("/panel/missions") &&
+			!isAdmin &&
+			!isSuperAdmin
+		) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (req.nextUrl.pathname.startsWith("/panel/others") && !isSuperAdmin) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+
+		if (req.nextUrl.pathname.startsWith("/panel/settings") && !isSuperAdmin) {
+			return NextResponse.rewrite(new URL("/panel/unauthorized", req.nextUrl));
+		}
+	},
+	{
+		callbacks: {
+			authorized: ({ token }) => !!token,
+		},
+	},
+);
+
+export const config = {
+	matcher: [
+		"/panel/dashboard",
+		"/panel/users/:path*",
+		"/panel/visas/:path*",
+		"/panel/exonerations/:path*",
+		"/panel/exemptions/:path*",
+		"/panel/conferences/:path*",
+		"/panel/registrations/:path*",
+		"/panel/missions/:path*",
+		"/panel/diplomatic/:path*",
+		"/panel/honor-lounge/:path*",
+		"/panel/others/:path*",
+		"/panel/settings/:path*",
+	],
+};

@@ -1,0 +1,708 @@
+tags:
+  - name: Cards - Other Dependant
+    description: Gestion des cartes diplomatiques pour autres personnes à charge
+
+paths:
+  /api/card/other-dependant:
+    post:
+      tags:
+        - Cards - Other Dependant
+      summary: Créer une nouvelle carte autre personne à charge
+      description: Crée une nouvelle demande de carte diplomatique pour une autre personne à charge
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOtherDependantCardInput'
+      responses:
+        '200':
+          description: Carte créée avec succès
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    get:
+      tags:
+        - Cards - Other Dependant
+      summary: Obtenir toutes les cartes autres personnes à charge
+      description: Récupère la liste avec filtres
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste récupérée
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/card/other-dependant/files:
+    post:
+      tags:
+        - Cards - Other Dependant
+      summary: Attacher les fichiers initiaux
+      description: Upload initial (passport, attestation de dépendance, photo)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - otherDependantDiplomaticCardId
+                - passport
+                - ad
+                - photo
+              properties:
+                otherDependantDiplomaticCardId:
+                  type: string
+                  format: uuid
+                passport:
+                  type: string
+                  format: binary
+                ad:
+                  type: string
+                  format: binary
+                  description: Attestation de dépendance
+                photo:
+                  type: string
+                  format: binary
+                others:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Fichiers attachés
+        '405':
+          description: Fichiers déjà attachés
+
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Mettre à jour les fichiers
+      description: Met à jour les fichiers existants
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - otherDependantDiplomaticCardId
+              properties:
+                otherDependantDiplomaticCardId:
+                  type: string
+                  format: uuid
+                passport:
+                  type: string
+                  format: binary
+                ad:
+                  type: string
+                  format: binary
+                photo:
+                  type: string
+                  format: binary
+                others:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Fichiers mis à jour
+
+  /api/card/other-dependant/files/other/delete/{id}:
+    patch:
+      tags:
+        - Cards - Other Dependant
+      summary: Supprimer des fichiers additionnels
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fileKeys
+              properties:
+                fileKeys:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Fichiers supprimés
+
+  /api/card/other-dependant/pointfocal/validate/{id}:
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Validation point focal
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte soumise
+
+  /api/card/other-dependant/admin/validate/{id}:
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Validation admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Validation effectuée
+
+  /api/card/other-dependant/superadmin/validate/{id}:
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Validation super admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documentStage
+              properties:
+                documentStage:
+                  type: string
+                validUntil:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Validation effectuée
+
+  /api/card/other-dependant/set-printed/{id}:
+    patch:
+      tags:
+        - Cards - Other Dependant
+      summary: Marquer comme imprimée
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte imprimée
+
+  /api/card/other-dependant/undo-print/{id}:
+    patch:
+      tags:
+        - Cards - Other Dependant
+      summary: Annuler l'impression
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Impression annulée
+
+  /api/card/other-dependant/set-returned/{id}:
+    patch:
+      tags:
+        - Cards - Other Dependant
+      summary: Marquer une carte comme restituée
+      description: Change le statut d'une carte imprimée à RETURNED (Admin/SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte marquée comme restituée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: La carte doit être imprimée et non expirée
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Carte non trouvée
+
+  /api/card/other-dependant/{id}:
+    get:
+      tags:
+        - Cards - Other Dependant
+      summary: Obtenir une carte par ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte récupérée
+
+    patch:
+      tags:
+        - Cards - Other Dependant
+      summary: Mettre à jour partiellement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOtherDependantCardInput'
+      responses:
+        '200':
+          description: Carte mise à jour
+
+    delete:
+      tags:
+        - Cards - Other Dependant
+      summary: Supprimer une carte
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Carte supprimée
+
+  # Routes renouvellement
+  /api/card/other-dependant/renew:
+    get:
+      tags:
+        - Cards - Other Dependant
+      summary: Liste des renouvellements
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste récupérée
+
+  /api/card/other-dependant/renew/create/{id}:
+    post:
+      tags:
+        - Cards - Other Dependant
+      summary: Créer un renouvellement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renouvellement créé
+
+  /api/card/other-dependant/renew/pointfocal/validate/{id}:
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Validation point focal (renouvellement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Soumis
+
+  /api/card/other-dependant/renew/admin/validate/{id}:
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Validation admin (renouvellement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validé
+
+  /api/card/other-dependant/renew/superadmin/validate/{id}:
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Validation super admin (renouvellement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validé
+
+  /api/card/other-dependant/renew/set-printed/{id}:
+    patch:
+      tags:
+        - Cards - Other Dependant
+      summary: Marquer renouvellement comme imprimé
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Marqué imprimé
+
+  /api/card/other-dependant/renew/undo-print/{id}:
+    patch:
+      tags:
+        - Cards - Other Dependant
+      summary: Annuler impression renouvellement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Annulé
+
+  /api/card/other-dependant/renew/set-returned/{id}:
+    patch:
+      tags:
+        - Cards - Other Dependant
+      summary: Marquer un renouvellement comme restitué
+      description: Change le statut d'un renouvellement imprimé à RETURNED (Admin/SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renouvellement marqué comme restitué
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: Le renouvellement doit être imprimé et non expiré
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Renouvellement non trouvé
+
+  /api/card/other-dependant/renew/{id}:
+    get:
+      tags:
+        - Cards - Other Dependant
+      summary: Obtenir un renouvellement par ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renouvellement récupéré
+
+  # Routes duplicata
+  /api/card/other-dependant/duplicata:
+    post:
+      tags:
+        - Cards - Other Dependant
+      summary: Demander un duplicata
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Duplicata créé
+
+    get:
+      tags:
+        - Cards - Other Dependant
+      summary: Liste des duplicatas
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste récupérée
+
+  /api/card/other-dependant/duplicata/{id}:
+    get:
+      tags:
+        - Cards - Other Dependant
+      summary: Obtenir un duplicata par ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Duplicata récupéré
+
+  /api/card/other-dependant/duplicata/pointfocal/validate/{id}:
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Validation point focal (duplicata)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Soumis
+
+  /api/card/other-dependant/duplicata/admin/validate/{id}:
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Validation admin (duplicata)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validé
+
+  /api/card/other-dependant/duplicata/superadmin/validate/{id}:
+    put:
+      tags:
+        - Cards - Other Dependant
+      summary: Validation super admin (duplicata)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validé
+
+  /api/card/other-dependant/duplicata/set-returned/{id}:
+    patch:
+      tags:
+        - Cards - Other Dependant
+      summary: Marquer un duplicata comme restitué
+      description: Change le statut d'un duplicata imprimé à RETURNED (Admin/SuperAdmin uniquement)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Duplicata marqué comme restitué
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '400':
+          description: Le duplicata doit être imprimé et la carte originale non expirée
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Duplicata non trouvé
+
+components:
+  schemas:
+    CreateOtherDependantCardInput:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - gender
+        - dateOfBirth
+        - ownerDiplomaticCardId
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        gender:
+          type: string
+          enum: [M, F]
+        dateOfBirth:
+          type: string
+          format: date-time
+        ownerDiplomaticCardId:
+          type: string
+          format: uuid
+
+    UpdateOtherDependantCardInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string

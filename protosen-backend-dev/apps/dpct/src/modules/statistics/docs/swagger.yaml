@@ -1,0 +1,75 @@
+tags:
+  - name: Statistics
+    description: Statistiques des cartes diplomatiques
+
+paths:
+  /api/stats/card:
+    get:
+      tags:
+        - Statistics
+      summary: Statistiques des cartes (Admin)
+      description: Obtient les statistiques des cartes par type et statut
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Statistiques récupérées
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CardStats'
+
+  /api/stats/card/renew:
+    get:
+      tags:
+        - Statistics
+      summary: Statistiques des renouvellements (Admin)
+      description: Obtient les statistiques des cartes renouvelées
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Statistiques récupérées
+
+  /api/stats/card/duplicata:
+    get:
+      tags:
+        - Statistics
+      summary: Statistiques des duplicatas (Admin)
+      description: Obtient les statistiques des cartes dupliquées
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Statistiques récupérées
+
+components:
+  schemas:
+    CardStats:
+      type: object
+      properties:
+        name:
+          type: string
+        total:
+          type: integer
+        onHold:
+          type: integer
+        pending:
+          type: integer
+        rejected:
+          type: integer
+        accepted:
+          type: integer
+        confirmed:
+          type: integer
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
