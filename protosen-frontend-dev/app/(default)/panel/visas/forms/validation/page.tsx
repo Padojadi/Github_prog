@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import {
@@ -7,13 +9,18 @@ import {
 	useVisaWorkflow,
 } from "@/features/visas/hooks/use-visa-workflow";
 import WorkflowStatusBadge from "@/features/visas/components/workflow-status-badge";
-import type { VisaWorkflowRecord } from "@/features/visas/lib/workflow-types";
+import type {
+	VisaWorkflowRecord,
+	VisaWorkflowStatus,
+} from "@/features/visas/lib/workflow-types";
 
 export default function VisaValidationFormPage() {
+	const searchParams = useSearchParams();
 	const currentUser = useCurrentUser();
 	const { records, isLoading, error, runAction, stats } = useVisaWorkflow();
 	const [message, setMessage] = useState<string | null>(null);
 	const [reasonByRow, setReasonByRow] = useState<Record<string, string>>({});
+	const statusFilter = searchParams.get("status") as VisaWorkflowStatus | null;
 
 	const normalizedRole = String(currentUser?.role || "")
 		.trim()
@@ -38,6 +45,16 @@ export default function VisaValidationFormPage() {
 			),
 		[records]
 	);
+	const filteredDecidedRows = useMemo(() => {
+		if (!statusFilter) {
+			return decidedRows;
+		}
+		return decidedRows.filter((row) => row.status === statusFilter);
+	}, [decidedRows, statusFilter]);
+	const showPendingSection = !statusFilter || statusFilter === "PENDING";
+	const showAcceptedSection = !statusFilter || statusFilter === "ACCEPTED";
+	const showDecidedSection =
+		!statusFilter || ["REJECTED", "RETURNED", "EMITTED", "WITHDRAWN"].includes(statusFilter);
 
 	const performAction = async (
 		row: VisaWorkflowRecord,
@@ -84,6 +101,14 @@ export default function VisaValidationFormPage() {
 					{message}
 				</p>
 			)}
+			{statusFilter && (
+				<p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+					Filtre actif: <strong>{getVisaStatusLabel(statusFilter)}</strong>.{" "}
+					<Link href="/panel/visas/forms/validation" className="underline">
+						Afficher toutes les rubriques
+					</Link>
+				</p>
+			)}
 
 			{!canReview && (
 				<div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
@@ -92,70 +117,76 @@ export default function VisaValidationFormPage() {
 				</div>
 			)}
 
-			<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-				<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-					Demandes de visa en attente
-				</h2>
-				<VisaValidationTable
-					rows={pendingRows}
-					isLoading={isLoading}
-					error={error}
-					reasonByRow={reasonByRow}
-					onReasonChange={(id, reason) =>
-						setReasonByRow((prev) => ({ ...prev, [id]: reason }))
-					}
-					onAccept={(row) => performAction(row, "ACCEPT")}
-					onReject={(row) => performAction(row, "REJECT")}
-					onReturn={(row) => performAction(row, "RETURN")}
-					showReviewActions={canReview}
-				/>
-			</section>
+			{showPendingSection && (
+				<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+					<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+						Demandes de visa en attente
+					</h2>
+					<VisaValidationTable
+						rows={pendingRows}
+						isLoading={isLoading}
+						error={error}
+						reasonByRow={reasonByRow}
+						onReasonChange={(id, reason) =>
+							setReasonByRow((prev) => ({ ...prev, [id]: reason }))
+						}
+						onAccept={(row) => performAction(row, "ACCEPT")}
+						onReject={(row) => performAction(row, "REJECT")}
+						onReturn={(row) => performAction(row, "RETURN")}
+						showReviewActions={canReview}
+					/>
+				</section>
+			)}
 
-			<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-				<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-					Demandes acceptées (émission talon)
-				</h2>
-				<VisaAcceptedTable
-					rows={acceptedRows}
-					isLoading={isLoading}
-					error={error}
-					onEmit={(row) => performAction(row, "EMIT")}
-					canReview={canReview}
-				/>
-			</section>
+			{showAcceptedSection && (
+				<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+					<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+						Demandes acceptées (émission talon)
+					</h2>
+					<VisaAcceptedTable
+						rows={acceptedRows}
+						isLoading={isLoading}
+						error={error}
+						onEmit={(row) => performAction(row, "EMIT")}
+						canReview={canReview}
+					/>
+				</section>
+			)}
 
-			<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-				<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-					Historique des décisions
-				</h2>
-				{isLoading ? (
-					<p className="text-sm text-slate-500">Chargement...</p>
-				) : decidedRows.length === 0 ? (
-					<p className="text-sm text-slate-500">Aucune décision enregistrée.</p>
-				) : (
-					<div className="space-y-2">
-						{decidedRows.map((row) => (
-							<div
-								key={row.id}
-								className="flex flex-col gap-1 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-700"
-							>
-								<div className="flex items-center justify-between">
-									<span className="font-medium">{row.reference}</span>
-									<WorkflowStatusBadge status={row.status} />
-								</div>
-								<p className="text-slate-600 dark:text-slate-300">
-									{row.applicantFirstName} {row.applicantLastName} - {row.passportNumber}
-								</p>
-								{row.statusReason && (
-									<p className="text-xs text-slate-500 dark:text-slate-400">
-										Motif: {row.statusReason}
+			{showDecidedSection && (
+				<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+					<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+						Historique des décisions
+					</h2>
+					{isLoading ? (
+						<p className="text-sm text-slate-500">Chargement...</p>
+					) : filteredDecidedRows.length === 0 ? (
+						<p className="text-sm text-slate-500">Aucune décision enregistrée.</p>
+					) : (
+						<div className="space-y-2">
+							{filteredDecidedRows.map((row) => (
+								<div
+									key={row.id}
+									className="flex flex-col gap-1 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-700"
+								>
+									<div className="flex items-center justify-between">
+										<span className="font-medium">{row.reference}</span>
+										<WorkflowStatusBadge status={row.status} />
+									</div>
+									<p className="text-slate-600 dark:text-slate-300">
+										{row.applicantFirstName} {row.applicantLastName} - {row.passportNumber}
 									</p>
-								)}
-							</div>
-						))}
-					</div>
-				)}
-			</section>
+									{row.statusReason && (
+										<p className="text-xs text-slate-500 dark:text-slate-400">
+											Motif: {row.statusReason}
+										</p>
+									)}
+								</div>
+							))}
+						</div>
+					)}
+				</section>
+			)}
 		</div>
 	);
 }

@@ -142,6 +142,43 @@ const visasMenu: Ilink[] = [
 		],
 	},
 	{
+		href: "/panel/visas/forms/validation?status=PENDING",
+		label: "Dossiers par statut",
+		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+		children: [
+			{
+				href: "/panel/visas/forms/validation?status=PENDING",
+				label: "En attente",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/visas/forms/validation?status=ACCEPTED",
+				label: "Acceptée",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/visas/forms/retrait?status=EMITTED",
+				label: "Émis",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/visas/forms/retrait?status=WITHDRAWN",
+				label: "Retiré",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/visas/forms/validation?status=REJECTED",
+				label: "Rejetée",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+			{
+				href: "/panel/visas/forms/validation?status=RETURNED",
+				label: "Retournée",
+				accessPermissions: ["ACCESS_CONFERENCE_MODULE"],
+			},
+		],
+	},
+	{
 		href: "/panel/visas/kpi",
 		label: "Indicateurs KPI",
 		accessPermissions: ["ACCESS_CONFERENCE_MODULE"],

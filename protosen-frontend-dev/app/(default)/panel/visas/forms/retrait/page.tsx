@@ -1,15 +1,22 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import WorkflowStatusBadge from "@/features/visas/components/workflow-status-badge";
-import { useVisaWorkflow } from "@/features/visas/hooks/use-visa-workflow";
-import type { VisaWorkflowRecord } from "@/features/visas/lib/workflow-types";
+import { getVisaStatusLabel, useVisaWorkflow } from "@/features/visas/hooks/use-visa-workflow";
+import type {
+	VisaWorkflowRecord,
+	VisaWorkflowStatus,
+} from "@/features/visas/lib/workflow-types";
 
 export default function VisaWithdrawalFormPage() {
+	const searchParams = useSearchParams();
 	const currentUser = useCurrentUser();
 	const { records, isLoading, error, runAction } = useVisaWorkflow();
 	const [message, setMessage] = useState<string | null>(null);
+	const statusFilter = searchParams.get("status") as VisaWorkflowStatus | null;
 
 	const normalizedRole = String(currentUser?.role || "")
 		.trim()
@@ -42,6 +49,8 @@ export default function VisaWithdrawalFormPage() {
 			(row) => row.status === "WITHDRAWN" && row.submittedBy.id === currentUser.id
 		);
 	}, [records, canReview, currentUser?.id]);
+	const showEmittedSection = !statusFilter || statusFilter === "EMITTED";
+	const showWithdrawnSection = !statusFilter || statusFilter === "WITHDRAWN";
 
 	const confirmWithdrawal = async (row: VisaWorkflowRecord) => {
 		const result = await runAction(row.id, "WITHDRAW");
@@ -69,81 +78,93 @@ export default function VisaWithdrawalFormPage() {
 					{message}
 				</p>
 			)}
+			{statusFilter && (
+				<p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+					Filtre actif: <strong>{getVisaStatusLabel(statusFilter)}</strong>.{" "}
+					<Link href="/panel/visas/forms/retrait" className="underline">
+						Afficher toutes les rubriques
+					</Link>
+				</p>
+			)}
 
-			<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-				<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-					Visas émis disponibles pour retrait
-				</h2>
-				{isLoading ? (
-					<p className="text-sm text-slate-500">Chargement...</p>
-				) : error ? (
-					<p className="text-sm text-red-600">{error}</p>
-				) : emittedRows.length === 0 ? (
-					<p className="text-sm text-slate-500">
-						Aucun visa émis en attente de retrait pour le moment.
-					</p>
-				) : (
-					<div className="space-y-2">
-						{emittedRows.map((row) => (
-							<div
-								key={row.id}
-								className="flex flex-col gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-700 md:flex-row md:items-center md:justify-between"
-							>
-								<div className="space-y-1">
-									<p className="font-medium">
-										{row.reference} - {row.applicantFirstName} {row.applicantLastName}
-									</p>
-									<p className="text-xs text-slate-500">
-										Notifié le{" "}
-										{row.notifiedAt
-											? new Date(row.notifiedAt).toLocaleString("fr-FR")
-											: "-"}
-									</p>
-									<WorkflowStatusBadge status={row.status} />
-								</div>
-								<button
-									type="button"
-									onClick={() => confirmWithdrawal(row)}
-									className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500"
+			{showEmittedSection && (
+				<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+					<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+						Visas émis disponibles pour retrait
+					</h2>
+					{isLoading ? (
+						<p className="text-sm text-slate-500">Chargement...</p>
+					) : error ? (
+						<p className="text-sm text-red-600">{error}</p>
+					) : emittedRows.length === 0 ? (
+						<p className="text-sm text-slate-500">
+							Aucun visa émis en attente de retrait pour le moment.
+						</p>
+					) : (
+						<div className="space-y-2">
+							{emittedRows.map((row) => (
+								<div
+									key={row.id}
+									className="flex flex-col gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-700 md:flex-row md:items-center md:justify-between"
 								>
-									Confirmer le retrait
-								</button>
-							</div>
-						))}
-					</div>
-				)}
-			</section>
-
-			<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-				<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-					Historique des retraits
-				</h2>
-				{withdrawnRows.length === 0 ? (
-					<p className="text-sm text-slate-500">Aucun retrait enregistré.</p>
-				) : (
-					<div className="space-y-2">
-						{withdrawnRows.map((row) => (
-							<div
-								key={row.id}
-								className="rounded-md border border-slate-200 p-3 text-sm dark:border-slate-700"
-							>
-								<div className="flex items-center justify-between">
-									<p className="font-medium">{row.reference}</p>
-									<WorkflowStatusBadge status={row.status} />
+									<div className="space-y-1">
+										<p className="font-medium">
+											{row.reference} - {row.applicantFirstName} {row.applicantLastName}
+										</p>
+										<p className="text-xs text-slate-500">
+											Notifié le{" "}
+											{row.notifiedAt
+												? new Date(row.notifiedAt).toLocaleString("fr-FR")
+												: "-"}
+										</p>
+										<WorkflowStatusBadge status={row.status} />
+									</div>
+									<button
+										type="button"
+										onClick={() => confirmWithdrawal(row)}
+										className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500"
+									>
+										Confirmer le retrait
+									</button>
 								</div>
-								<p className="text-xs text-slate-500">
-									Retiré le{" "}
-									{row.withdrawnAt
-										? new Date(row.withdrawnAt).toLocaleString("fr-FR")
-										: "-"}
-									{" - "}
-									par {row.withdrawnBy || "-"}
-								</p>
-							</div>
-						))}
-					</div>
-				)}
-			</section>
+							))}
+						</div>
+					)}
+				</section>
+			)}
+
+			{showWithdrawnSection && (
+				<section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+					<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+						Historique des retraits
+					</h2>
+					{withdrawnRows.length === 0 ? (
+						<p className="text-sm text-slate-500">Aucun retrait enregistré.</p>
+					) : (
+						<div className="space-y-2">
+							{withdrawnRows.map((row) => (
+								<div
+									key={row.id}
+									className="rounded-md border border-slate-200 p-3 text-sm dark:border-slate-700"
+								>
+									<div className="flex items-center justify-between">
+										<p className="font-medium">{row.reference}</p>
+										<WorkflowStatusBadge status={row.status} />
+									</div>
+									<p className="text-xs text-slate-500">
+										Retiré le{" "}
+										{row.withdrawnAt
+											? new Date(row.withdrawnAt).toLocaleString("fr-FR")
+											: "-"}
+										{" - "}
+										par {row.withdrawnBy || "-"}
+									</p>
+								</div>
+							))}
+						</div>
+					)}
+				</section>
+			)}
 		</div>
 	);
 }
