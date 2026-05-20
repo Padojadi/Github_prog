@@ -39,7 +39,8 @@ export default function VisasModulePage() {
 				</h1>
 				<p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
 					Ce module suit le TDR "Système de Gestion des Visas" avec les rubriques,
-					le workflow et les formulaires requis.
+					le workflow et les formulaires requis. Les états opérationnels sont:
+					En attente, Acceptée, Émis et Retiré.
 				</p>
 			</div>
 

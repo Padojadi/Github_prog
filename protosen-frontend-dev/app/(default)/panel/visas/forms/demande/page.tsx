@@ -1,14 +1,52 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { visaRequiredDocuments, visaTypes } from "@/features/visas/lib/tdr";
+import { useVisaWorkflow } from "@/features/visas/hooks/use-visa-workflow";
+import WorkflowStatusBadge from "@/features/visas/components/workflow-status-badge";
+import useCurrentUser from "@/hooks/useCurrentUser";
 
 export default function VisaRequestFormPage() {
-	const [submitted, setSubmitted] = useState(false);
+	const currentUser = useCurrentUser();
+	const { records, isLoading, error, createRequest, runAction } = useVisaWorkflow();
+	const [message, setMessage] = useState<string | null>(null);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+	const userRequests = useMemo(() => {
+		if (!currentUser?.id) {
+			return [];
+		}
+		return records.filter((row) => row.submittedBy.id === currentUser.id);
+	}, [records, currentUser?.id]);
+
+	const availableForWithdraw = userRequests.filter((row) => row.status === "EMITTED");
+
+	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		setSubmitted(true);
+		setMessage(null);
+		setIsSubmitting(true);
+
+		const form = event.currentTarget;
+		const formData = new FormData(form);
+		const documents = formData.getAll("documents");
+
+		const result = await createRequest({
+			applicantLastName: String(formData.get("lastName") || ""),
+			applicantFirstName: String(formData.get("firstName") || ""),
+			birthDate: String(formData.get("birthDate") || ""),
+			nationality: String(formData.get("nationality") || ""),
+			passportNumber: String(formData.get("passportNumber") || ""),
+			visaType: String(formData.get("visaType") || ""),
+			documentsCount: documents.filter((item) => item instanceof File && item.name).length,
+		});
+
+		if (result.ok) {
+			form.reset();
+			setMessage("Demande soumise. Elle est maintenant dans le dossier 'En attente'.");
+		} else {
+			setMessage(result.message);
+		}
+		setIsSubmitting(false);
 	};
 
 	return (
@@ -18,9 +56,17 @@ export default function VisaRequestFormPage() {
 					Formulaire - Demande de visa
 				</h1>
 				<p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-					Soumission de la demande avec les champs définis dans le TDR.
+					Le point focal soumet ici la demande. Elle passe automatiquement à l'état
+					"En attente" pour traitement par le responsable Visa.
 				</p>
 			</div>
+
+			{availableForWithdraw.length > 0 && (
+				<div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+					{availableForWithdraw.length} visa(s) émis disponible(s). Le point focal peut
+					aller au formulaire de retrait pour finaliser.
+				</div>
+			)}
 
 			<div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
 				<form
@@ -71,22 +117,24 @@ export default function VisaRequestFormPage() {
 							<span className="mb-1 block text-slate-700 dark:text-slate-300">
 								Documents (upload multiple)
 							</span>
-							<input type="file" className="form-input w-full" multiple />
+							<input
+								type="file"
+								className="form-input w-full"
+								name="documents"
+								multiple
+							/>
 						</label>
 					</div>
 					<div className="mt-4 flex items-center justify-end">
 						<button
 							type="submit"
+							disabled={isSubmitting}
 							className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
 						>
-							Soumettre la demande
+							{isSubmitting ? "Soumission..." : "Soumettre la demande"}
 						</button>
 					</div>
-					{submitted && (
-						<p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
-							Demande enregistrée avec succès (mode formulaire TDR).
-						</p>
-					)}
+					{message && <p className="mt-3 text-sm text-indigo-600 dark:text-indigo-300">{message}</p>}
 				</form>
 
 				<div className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
@@ -99,6 +147,78 @@ export default function VisaRequestFormPage() {
 						))}
 					</ul>
 				</div>
+			</div>
+
+			<div className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+				<div className="mb-3 flex items-center justify-between">
+					<h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+						Mes demandes Visa
+					</h2>
+				</div>
+
+				{isLoading ? (
+					<p className="text-sm text-slate-500 dark:text-slate-400">Chargement...</p>
+				) : error ? (
+					<p className="text-sm text-red-600 dark:text-red-300">{error}</p>
+				) : userRequests.length === 0 ? (
+					<p className="text-sm text-slate-500 dark:text-slate-400">
+						Aucune demande soumise pour le moment.
+					</p>
+				) : (
+					<div className="overflow-x-auto">
+						<table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-700">
+							<thead className="bg-slate-50 dark:bg-slate-800">
+								<tr>
+									<th className="px-3 py-2 text-left font-medium">Référence</th>
+									<th className="px-3 py-2 text-left font-medium">Demandeur</th>
+									<th className="px-3 py-2 text-left font-medium">Type</th>
+									<th className="px-3 py-2 text-left font-medium">État</th>
+									<th className="px-3 py-2 text-left font-medium">Soumise le</th>
+									<th className="px-3 py-2 text-left font-medium">Motif</th>
+									<th className="px-3 py-2 text-left font-medium">Actions</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+								{userRequests.map((row) => (
+									<tr key={row.id}>
+										<td className="px-3 py-2 font-medium">{row.reference}</td>
+										<td className="px-3 py-2">
+											{row.applicantFirstName} {row.applicantLastName}
+										</td>
+										<td className="px-3 py-2">{row.visaType}</td>
+										<td className="px-3 py-2">
+											<WorkflowStatusBadge status={row.status} />
+										</td>
+										<td className="px-3 py-2">
+											{new Date(row.submittedAt).toLocaleString("fr-FR")}
+										</td>
+										<td className="px-3 py-2">{row.statusReason || "-"}</td>
+										<td className="px-3 py-2">
+											{row.status === "RETURNED" ? (
+												<button
+													type="button"
+													onClick={async () => {
+														const result = await runAction(row.id, "RESUBMIT");
+														setMessage(
+															result.ok
+																? "Demande re-soumise avec succès."
+																: result.message
+														);
+													}}
+													className="rounded bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-500"
+												>
+													Renvoyer en attente
+												</button>
+											) : (
+												<span className="text-xs text-slate-500">-</span>
+											)}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				)}
 			</div>
 		</div>
 	);

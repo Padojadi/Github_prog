@@ -10,12 +10,11 @@ export const visaKeyFeatures = [
 ];
 
 export const visaWorkflowSteps = [
-	"Soumission demande",
-	"Vérification automatique",
-	"Validation DPCT",
-	"Notification",
-	"Émission visa",
-	"Retrait",
+	"Soumission point focal - état En attente",
+	"Traitement responsable Visa: accepter, rejeter ou retourner avec motif",
+	"Si accepté: talon de visa émis",
+	"Notification du point focal de la disponibilité",
+	"Retrait du visa - état Retiré",
 ];
 
 export const visaRequiredDocuments = [

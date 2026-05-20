@@ -4,17 +4,20 @@ const formLinks = [
 	{
 		href: "/panel/visas/forms/demande",
 		title: "Demande de visa",
-		description: "Formulaire de soumission initiale avec pièces justificatives.",
+		description:
+			"Soumission point focal. Toute demande est créée en état En attente.",
 	},
 	{
 		href: "/panel/visas/forms/validation",
 		title: "Validation",
-		description: "Analyse dossier, score automatique, décision et motif de rejet.",
+		description:
+			"Dossier en attente traité par le responsable: accepter, rejeter ou retourner avec motif.",
 	},
 	{
 		href: "/panel/visas/forms/retrait",
 		title: "Retrait",
-		description: "Validation du collecteur et enregistrement du retrait sécurisé.",
+		description:
+			"Après émission et notification, le point focal confirme le retrait du visa.",
 	},
 ];
 
