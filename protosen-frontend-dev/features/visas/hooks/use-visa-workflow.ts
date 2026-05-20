@@ -9,6 +9,7 @@ import type {
 } from "../lib/workflow-types";
 
 type ActionResult = { ok: true } | { ok: false; message: string };
+const VISA_WORKFLOW_API_BASE_PATH = "/panel/visas/api/workflow";
 
 const statusLabelMap: Record<VisaWorkflowStatus, string> = {
 	PENDING: "En attente",
@@ -46,6 +47,18 @@ const mapApiErrorToMessage = (message: string) => {
 	}
 };
 
+const safeParseJsonResponse = async <T>(response: Response): Promise<T | null> => {
+	const contentType = response.headers.get("content-type") || "";
+	if (!contentType.includes("application/json")) {
+		return null;
+	}
+	try {
+		return (await response.json()) as T;
+	} catch {
+		return null;
+	}
+};
+
 export function useVisaWorkflow() {
 	const [records, setRecords] = useState<VisaWorkflowRecord[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -55,17 +68,20 @@ export function useVisaWorkflow() {
 		setIsLoading(true);
 		setError(null);
 		try {
-			const response = await fetch("/api/visas/workflow", {
+			const response = await fetch(VISA_WORKFLOW_API_BASE_PATH, {
 				method: "GET",
 				cache: "no-store",
 			});
-			const result = (await response.json()) as {
+			const result = (await safeParseJsonResponse<{
 				data?: VisaWorkflowRecord[];
 				message?: string;
-			};
+			}>(response)) ?? {};
 
 			if (!response.ok) {
-				throw new Error(result.message || "Erreur lors du chargement des demandes.");
+				throw new Error(
+					result.message ||
+						"Session expirée ou réponse inattendue du serveur. Rechargez la page."
+				);
 			}
 
 			setRecords(Array.isArray(result.data) ? result.data : []);
@@ -85,7 +101,7 @@ export function useVisaWorkflow() {
 	const createRequest = useCallback(
 		async (payload: VisaCreateRequestPayload): Promise<ActionResult> => {
 			try {
-				const response = await fetch("/api/visas/workflow", {
+				const response = await fetch(VISA_WORKFLOW_API_BASE_PATH, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -93,11 +109,15 @@ export function useVisaWorkflow() {
 					body: JSON.stringify(payload),
 				});
 
-				const result = (await response.json()) as { message?: string };
+				const result =
+					(await safeParseJsonResponse<{ message?: string }>(response)) ?? {};
 				if (!response.ok) {
 					return {
 						ok: false,
-						message: mapApiErrorToMessage(result.message || "Erreur de soumission."),
+						message: mapApiErrorToMessage(
+							result.message ||
+								"Session expirée ou réponse inattendue du serveur. Rechargez la page."
+						),
 					};
 				}
 
@@ -117,19 +137,23 @@ export function useVisaWorkflow() {
 			reason?: string
 		): Promise<ActionResult> => {
 			try {
-				const response = await fetch(`/api/visas/workflow/${id}`, {
+				const response = await fetch(`${VISA_WORKFLOW_API_BASE_PATH}/${id}`, {
 					method: "PATCH",
 					headers: {
 						"Content-Type": "application/json",
 					},
 					body: JSON.stringify({ action, reason }),
 				});
-				const result = (await response.json()) as { message?: string };
+				const result =
+					(await safeParseJsonResponse<{ message?: string }>(response)) ?? {};
 
 				if (!response.ok) {
 					return {
 						ok: false,
-						message: mapApiErrorToMessage(result.message || "Action impossible."),
+						message: mapApiErrorToMessage(
+							result.message ||
+								"Session expirée ou réponse inattendue du serveur. Rechargez la page."
+						),
 					};
 				}
 
