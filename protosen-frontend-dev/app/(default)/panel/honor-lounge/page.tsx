@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { Building2, Clock3, MapPin, Search, Users } from "lucide-react";
+import { Building2, Clock3, ExternalLink, MapPin, Search, Users } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,9 @@ import { useGetLounges } from "@/features/honor-lounge/hooks/use-get-lounges";
 import type { Lounge } from "@/features/honor-lounge/types";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { hasPermission } from "@/lib/utils";
+
+const HONOR_LOUNGE_MENU_URL =
+  "https://protosen.2ticglobal.com/salon-honneur/menu/Menu_Salon_Honneur_Diass.pdf";
 
 function currency(amount: number) {
   return new Intl.NumberFormat("fr-SN", {
@@ -110,6 +114,24 @@ export default function HonorLoungePage() {
           placeholder="Rechercher un salon..."
         />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Menu - Salon d&apos;honneur</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-3">
+          <div className="rounded-lg bg-white p-4">
+            <QRCodeSVG value={HONOR_LOUNGE_MENU_URL} size={220} />
+          </div>
+          <p className="text-sm font-semibold text-foreground">Le Menu</p>
+          <Button asChild variant="outline" size="sm">
+            <a href={HONOR_LOUNGE_MENU_URL} target="_blank" rel="noreferrer">
+              Ouvrir le menu
+              <ExternalLink className="h-4 w-4 ml-2" />
+            </a>
+          </Button>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         <Card>
