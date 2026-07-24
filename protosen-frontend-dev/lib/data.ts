@@ -221,6 +221,14 @@ const honorLoungeMenu: Ilink[] = [
 			"MANAGE_CONFERENCES",
 		],
 	},
+	{
+		href: "/panel/honor-lounge/menu",
+		label: "Menu",
+		accessPermissions: [
+			"ACCESS_HONOR_LOUNGE_MODULE",
+			"ACCESS_CONFERENCE_MODULE",
+		],
+	},
 ];
 
 export const links: Ilink[] = [
