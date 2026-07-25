@@ -4,6 +4,7 @@ import {
 	BsCreditCard2Back,
 	BsGrid1X2,
 	BsPeople,
+	BsQrCode,
 	BsSliders,
 	BsStickies,
 } from "react-icons/bs";
@@ -224,6 +225,7 @@ const honorLoungeMenu: Ilink[] = [
 	{
 		href: "/panel/honor-lounge/menu",
 		label: "Menu",
+		icon: React.createElement(BsQrCode, { size: 14 }),
 		accessPermissions: [
 			"ACCESS_HONOR_LOUNGE_MODULE",
 			"ACCESS_CONFERENCE_MODULE",

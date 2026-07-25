@@ -261,9 +261,12 @@ export default function Sidebar() {
 																		key={child.href}
 																	>
 																		<SidebarLink href={child.href}>
-																			<span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-																				{child.label}
-																			</span>
+																			<div className="flex items-center gap-2">
+																				{child.icon ? child.icon : null}
+																				<span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+																					{child.label}
+																				</span>
+																			</div>
 																		</SidebarLink>
 																	</li>
 																) : (
